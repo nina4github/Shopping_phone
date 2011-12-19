@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hello">Welcome to Basic EM. This application is the basic for the common and personal objects applications.</string>
+    <string name="app_name">Personal EM - Shopping</string>
+    <string name="activityText">Is there a new activity?</string>
+    <string name="activityNewText">Activity Initialized</string>
+    <string name="shareText">I just found this offer, check it out!</string>
+    <string name="labelmessage">How many are out?</string>
+    <string name="offerTitle">Tilbud</string>
+    <string name="userMenu">AddUser</string>
+    <string name="save">save</string>
+    <string name="cancel">cancel</string>
+    <string name="adduserText">Add user account name</string>
+    <string name="setUser_name">Set User Preference panel</string>
+    <string name="groupFriends">Venner</string>
+    <string name="activity">shopping</string>
+</resources>

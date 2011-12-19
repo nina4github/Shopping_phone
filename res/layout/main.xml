@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/OfferButton"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:weightSum="1" >
+
+    <LinearLayout
+        android:id="@+id/linearLayout2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:layout_weight="0.30" >
+
+        <LinearLayout
+            android:id="@+id/linearLayout1"
+            android:layout_width="wrap_content"
+            android:layout_height="254dp"
+            android:layout_weight="1"
+            android:orientation="vertical" >
+
+            <!-- <Gallery -->
+            <!-- android:id="@+id/gallery" -->
+            <!-- android:layout_width="fill_parent" -->
+            <!-- android:layout_height="wrap_content" -->
+            <!-- android:layout_gravity="left" -->
+            <!-- android:layout_weight="1" android:layout_margin="20dp" android:spacing="20dp"/> -->
+
+            <view
+                android:id="@+id/gallery"
+                android:layout_width="fill_parent"
+                android:layout_height="300px"
+                android:layout_margin="5dip"
+                class="em.twitterido.aw.YappsCircleGallery" />
+
+            <TextView
+                android:id="@+id/captionText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/labelmessage"
+                android:textSize="30dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+    
+    <TextView
+        android:id="@+id/activityNew"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="15dp" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp" >
+
+        <ImageButton
+            android:id="@+id/homeButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.44"
+            android:src="@drawable/plus" />
+
+        <ImageButton
+            android:id="@+id/offerpageButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.46"
+            android:src="@drawable/plus" />
+    </LinearLayout>
+
+</LinearLayout>
