@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="hello">Welcome to Basic EM. This application is the basic for the common and personal objects applications.</string>
-    <string name="app_name">Personal EM - Shopping</string>
+    <string name="app_name">SHOPPING FRIENDS</string>
     <string name="activityText">Is there a new activity?</string>
     <string name="activityNewText">Activity Initialized</string>
     <string name="shareText">I just found this offer, check it out!</string>
-    <string name="labelmessage">How many are out?</string>
+    <string name="labelmessage">#</string>
     <string name="offerTitle">Tilbud</string>
     <string name="userMenu">AddUser</string>
     <string name="save">save</string>
@@ -14,4 +14,22 @@
     <string name="setUser_name">Set User Preference panel</string>
     <string name="groupFriends">Venner</string>
     <string name="activity">shopping</string>
+    <string name="okButton">Tak!</string>
+    <string name="activeFriendsText"> venner er aktive</string>
+    <string name="sharedEventMessageText">aksjer</string>
+    <string name="homeTitle">Hjem</string>
+    <string name="offline"> went offline </string>
+    <string name="online"> is active now</string>
+    <string name="activeNumber">#</string>
+    <string name="activeMessage">venner pa indkob</string>
+    <string name="newEventMessageString"></string>
+    
+        <string name="newSparkMessage"> has just shared a new offer </string>
+        <string name="newLocationEnterMessage"> has just entered </string>
+     <string name="newLocationExitMessage"> has just left </string>
+     <string name="newActivityDataMessage"> has been out shopping for </string>
+     <string name="newActivityStartMessage"> is out shopping </string>
+     <string name="newActivityStopMessage"> finished shopping </string>
+     
+        
 </resources>

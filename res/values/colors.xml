@@ -15,7 +15,13 @@
   limitations under the License.
  -->
 <resources>
-    <color name="actionbar_background_light">#aa0000</color>
+    <color name="actionbar_background_light">#FFFFFF</color>
     <color name="actionbar_background_dark">#000000</color>
     <color name="drag_active_color">#80cccccc</color>
+    <color name="myblue">#2E00B8</color>
+    <color name="mygreen">#22FF22</color>
+    <color name="myorange">#FF6633</color>
+    <color name="myred">#B8002E</color>
+    <color name="myviolet">#8A00B8</color>
+    <color name="trans">#00000000</color>
 </resources>

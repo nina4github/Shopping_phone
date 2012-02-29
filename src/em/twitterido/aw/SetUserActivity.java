@@ -1,6 +1,7 @@
 package em.twitterido.aw;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
@@ -36,28 +37,16 @@ public class SetUserActivity extends Activity {
 				
 				Editor e = preferences.edit();
 				e.putString("user", value.getText().toString());
-				e.apply();
-				 
+				e.apply(); 
 				Log.d(TAG,"new user value = "+value.getText().toString());
+				Intent i = new Intent();
+				i.putExtra("name", value.getText().toString());
+				setResult(PersonalEMActivity.SETUSER, i);
 				finish();
 			}
 		});
 		
 	}
 	
-	
-	
-	
-	
-//	@Override
-//	protected void onStop() {
-//		// TODO Auto-generated method stub
-//		super.onStop();
-//		SharedPreferences preferences = getSharedPreferences(PersonalEmActivity.CONFIG_PREFS, 0);
-//		SharedPreferences.Editor editor = preferences.edit();
-//		editor.putString("AddUser", username);
-//		editor.commit();
-//	}
-
 	
 }

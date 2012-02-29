@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/LinearLayour0"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:weightSum="1" 
+    android:background="@color/myblue">
+
+    <LinearLayout
+        android:id="@+id/linearLayout1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:padding="10dip">
+
+        <ImageView
+            android:id="@+id/imageView1"
+            android:layout_width="152dp"
+            android:layout_height="wrap_content"
+            android:src="@drawable/shopping" />
+
+        <TextView
+            android:id="@+id/friendsCounter"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="@string/activeNumber"
+            android:textSize="80dp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/linearLayoutHome"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_gravity="center_horizontal"
+        android:orientation="vertical" >
+
+        <!-- <ImageButton -->
+        <!-- android:id="@+id/homepageButton_h" -->
+        <!-- android:layout_width="75dp" -->
+        <!-- android:layout_height="75dp" -->
+        <!-- android:layout_margin="2.5dp" -->
+        <!-- android:background="@color/trans" -->
+        <!-- android:scaleType="fitXY" -->
+        <!-- android:src="@drawable/hjem" -->
+        <!-- android:visibility="invisible" /> -->
+
+        <TextView
+            android:id="@+id/friendsCounterText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:text="@string/activeMessage"
+            android:textSize="40dp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/newEventMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.22"
+            android:padding="20dip"
+            android:text="@string/newEventMessageString"
+            android:textSize="30dp" android:gravity="center"/>
+
+    </LinearLayout>
+
+<!--    <LinearLayout-->
+<!--        android:id="@+id/linearLayout2"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="110dp" android:visibility="invisible">-->
+<!---->
+<!--      -->
+<!---->
+<!--        <ImageButton-->
+<!--            android:id="@+id/friendspageButton_h"-->
+<!--            android:layout_width="100dp"-->
+<!--            android:layout_height="100dp"-->
+<!--            android:background="@color/trans"-->
+<!--            android:scaleType="fitXY"-->
+<!--            android:src="@drawable/venner" android:layout_margin="2.5dp"-->
+<!--            android:visibility="invisible" -->
+<!--            />-->
+<!---->
+<!--        <ImageButton-->
+<!--            android:id="@+id/offerpageButton_h"-->
+<!--            android:layout_width="100dp"-->
+<!--            android:layout_height="100dp"-->
+<!--            android:background="@color/trans"-->
+<!--            android:scaleType="fitXY"-->
+<!--            android:src="@drawable/tilbut" android:layout_margin="2.5dp"-->
+<!--            android:visibility="invisible" -->
+<!--            />-->
+<!---->
+<!--        <ImageButton-->
+<!--            android:id="@+id/newofferButton_h"-->
+<!--            android:layout_width="100dp"-->
+<!--            android:layout_height="100dp"-->
+<!--            android:background="@color/trans"-->
+<!--            android:scaleType="fitXY"-->
+<!--            android:src="@drawable/nye" android:layout_margin="2.5dp"-->
+<!--       		android:visibility="invisible" -->
+<!--            />-->
+<!--    -->
+<!--    </LinearLayout>-->
+
+</LinearLayout>

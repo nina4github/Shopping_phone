@@ -6,45 +6,41 @@
 
     <uses-sdk android:minSdkVersion="10" />
 
-    <uses-permission android:name="android.permission.INTERNET" >
-    </uses-permission>
-    <uses-permission android:name="android.permission.WAKE_LOCK" >
-    </uses-permission>
-    <uses-permission android:name="android.permission.NFC" >
-    </uses-permission>
-    
-    <uses-feature android:name="android.hardware.usb.accessory" />
-	
-	
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.NFC"/>
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.CALL_PHONE"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
 
-    
+    <uses-feature android:name="android.hardware.usb.accessory" />
+
     <application
         android:icon="@drawable/icon"
-        android:label="@string/app_name" >
+        android:label="@string/app_name" android:name="PersonalEMApplication">
         <uses-library android:name="com.android.future.usb.accessory" >
         </uses-library>
 
         <activity
+            android:configChanges="keyboardHidden|orientation"
             android:label="@string/app_name"
             android:launchMode="singleTop"
-            android:name=".PersonalEmActivity" 
-            android:configChanges="keyboardHidden|orientation" >
+            android:name=".PersonalEMActivity" >
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter >
-                <action android:name="em.twitterido.aw.BasicEMActivity.gh.EVENT" >
-                </action>
-            </intent-filter>
-            
-              <intent-filter >
-                <action android:name="SENSOR_EVENT" >
-                </action>
-            </intent-filter>
+            <!-- <intent-filter > -->
+            <!-- <action android:name="em.twitterido.aw.PersonalEMActivity.gh.EVENT" > -->
+            <!-- </action> -->
+            <!-- </intent-filter> -->
+            <!-- <intent-filter > -->
+            <!-- <action android:name="SENSOR_EVENT" > -->
+            <!-- </action> -->
+            <!-- </intent-filter> -->
+
             <intent-filter >
                 <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" >
                 </action>
@@ -52,7 +48,7 @@
 
             <meta-data
                 android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"
-                android:resource="@xml/accessory_filter">
+                android:resource="@xml/accessory_filter" >
             </meta-data>
 
             <intent-filter >
@@ -74,25 +70,23 @@
         <service
             android:label="Genie Hub Service"
             android:name=".GHService" >
-            <intent-filter >
-                <action android:name="em.twitterido.aw.BasicEMActivity.ACTIVITY" >
-                </action>
-            </intent-filter>
-            <intent-filter >
-                <action android:name="em.twitterido.aw.BasicEMActivity.SHARE" >
-                </action>
-            </intent-filter>
         </service>
-        <service android:name=".ADKService" android:label="ADK manager service">
+        <service
+            android:label="ADK manager service"
+            android:name=".ADKService" >
         </service>
-        <activity android:label="@string/setUser_name" android:name=".SetUserActivity"></activity>
-        <activity android:label="@string/offerTitle" android:name=".OffersActivity">
-            <intent-filter></intent-filter>
+
+        <activity
+            android:label="@string/setUser_name"
+            android:name=".SetUserActivity" >
         </activity>
-        
-            
-        
+        <activity
+            android:label="@string/offerTitle"
+            android:name=".OffersActivity" >
+        </activity>
+        <activity android:name=".HomeActivity" android:label="@string/homeTitle" android:theme="@android:style/Theme.Dialog" android:launchMode="singleTask"></activity>
        
+        <service android:name=".ADKListenerService"></service>
     </application>
 
 </manifest>

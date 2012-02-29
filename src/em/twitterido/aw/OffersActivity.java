@@ -1,451 +1,626 @@
 package em.twitterido.aw;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.concurrent.ExecutionException;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.FileEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.eclipse.jetty.util.IO;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import android.app.Activity;
-import android.content.ContentResolver;
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Bundle;
-import android.os.Environment;
-import android.provider.MediaStore;
+import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ImageButton;
+import android.widget.BaseAdapter;
+import android.widget.Gallery;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.AdapterView.OnItemSelectedListener;
+import em.twitterido.aw.PersonalEMApplication.StatusListener;
 
-public class OffersActivity extends Activity {
+public class OffersActivity extends BaseActivity {
 
-	public static String TAG = "PersonalEM_Shopping / OffersActivity";
-	public static final int CAMERA_PIC_REQUEST = 2;
-
-	private Uri imageUri;
-	private String user, activity;
-
-	private static final String uri = "http://idea.itu.dk:8080/";
-	private static final String diaspora = "@idea.itu.dk:3000";
 	private SharedPreferences preferences;
-	private HttpClient client = new DefaultHttpClient();
 
-	public HttpClient getClient() {
-		return client;
-	}
+	private Drawable[] offers_images;
+	private ArrayList<Offer> shoppingoffers = new ArrayList<Offer>();
+
+	/* Gallery Handling */
+	public View lastSelectedView = null;
+	// private ImageView image_selected;
+	private Gallery offers_gallery;
+
+	private StatusListener statusListener;
 
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		// TODO Auto-generated method stub
-		super.onCreate(savedInstanceState);
+	protected void doOnCreate() {
 		setContentView(R.layout.offers);
+	}
 
-		preferences = getSharedPreferences(PersonalEMActivity.CONFIG_USER, 0);
-		user = preferences.getString("user", "");
-		activity = getString(R.string.activity);
+	private void initializeData() {
 
-		YappsCircleGallery yappsGallery = (YappsCircleGallery) findViewById(R.id.galleryOffers);
+		notificationCounter = Utilities
+				.updateNotificationCounter(getContacts());
+		updateOffers();
+	}
 
-		yappsGallery.secondaryListener = new OnItemSelectedListener() {
-			public void onItemSelected(AdapterView<?> arg0, View arg1,
-					int arg2, long arg3) {
-				// TODO Auto-generated method stub
+	private void initializeGallery() {
 
-				TextView t = (TextView) findViewById(R.id.captionOffersText);
-				// String name = contact_names[(arg2 % contact_names.length)];
-				// String name = contact_names.get((arg2 %
-				// contact_names.size()));
-				// String started = notificationCounter.get(name) == 0 ? "ikke "
-				// : "";
-				// t.setText(contact_names.get((arg2 % contact_names.size())) +
-				// " er "
-				// + started + activity);
+		offers_gallery = (Gallery) findViewById(R.id.galleryOffers);
+		// image_selected = (ImageView) findViewById(R.id.imageSelected);
+
+		Log.d(TAG, "offers_gallery created");
+		ImageAdapterCircleGallery galleryAdapter = new ImageAdapterCircleGallery(
+				this);
+
+		// if (offers_images == null) {
+		offers_images = new Drawable[shoppingoffers.size()];
+		int i = 0;
+		for (Offer offer : shoppingoffers) {
+			offers_images[i] = offer.getImageFile();
+			Log.d(TAG, "offers_image " + i + offers_images[i].toString());
+			i = i + 1;
+		}
+		// }
+
+		Log.d(TAG, "shopping offers: " + shoppingoffers.size());
+		Log.d(TAG, "offers images drawables: " + offers_images.length);
+
+		galleryAdapter.setmImageDrawables(offers_images);
+		Log.d(TAG, "gallery drawables: "
+				+ galleryAdapter.getmImageDrawables().length);
+		offers_gallery.setAdapter(galleryAdapter);
+		galleryAdapter.notifyDataSetChanged();
+
+		offers_gallery.setOnItemSelectedListener(new OnItemSelectedListener() {
+			public void onItemSelected(AdapterView<?> arg0, View v,
+					int position, long id) {
+				// Toast.makeText(OffersActivity.this, "" + position,
+				// Toast.LENGTH_SHORT).show();
+
+				// image_selected.setImageDrawable(shoppingoffers.get(position).getImageFile());
+				TextView message = (TextView) findViewById(R.id.captionOffersText);
+				User user = shoppingoffers.get(position).getSharedByUser();
+				String username = user.getFullName();
+				String text = "shared by: " + username + " on "+ shoppingoffers.get(position).getPublished();
+				
+				message.setText(text);
+				message.setTextColor(R.color.mygreen);
 
 			}
 
 			public void onNothingSelected(AdapterView<?> arg0) {
-				// TODO Auto-generated method stub
-
-			}
-		};
-
-		/**
-		 * setupButton listeners
-		 */
-		ImageButton offerButton = (ImageButton) findViewById(R.id.offerButton);
-		offerButton.setOnClickListener(new OnClickListener() {
-
-			public void onClick(View view) {
-				DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
-				Date date = new Date();
-				String now = dateFormat.format(date);
-				Log.d(TAG, now);
-				Intent cameraIntent = new Intent(
-						android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-
-				String filename = user + "offer" + now;
-
-				File dir = new File(Environment.getExternalStorageDirectory(),
-						"EM/shopping");
-				dir.mkdirs();
-
-				File file = new File(dir, "offer" + now + ".jpg");
-				Log.d(TAG, file.getName());
-				try {
-					file.createNewFile();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				imageUri = Uri.fromFile(file);
-				Log.d(TAG, imageUri.toString());
-				cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
-				startActivityForResult(cameraIntent, CAMERA_PIC_REQUEST);
+				// image_selected.setImageDrawable(shoppingoffers.get(0).getImageFile());
 
 			}
 		});
 
-		ImageButton homeButton = (ImageButton) findViewById(R.id.homeButton);
-		ImageButton offerpageButton = (ImageButton) findViewById(R.id.offerpageButton);
+	}
 
-		homeButton.setOnClickListener(new OnClickListener() {
+	private boolean isUpdated() {
 
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
+		Log.d(TAG, "check if offers.txt exists and is updated");
+
+		if (!(new File(offers_dir, "offers.txt").exists())) {
+			Log.d(TAG, "offers.txt does not exist, therefore is not updated");
+			return false; // exit
+		}
+
+		String lastoffers = getOffersFromDiaspora();
+		// chech if last offers == offers.txt
+		// if equal do nothing
+		// if updated check latest photo id
+		// if latest photo id > max shoppingoffers_id
+		// save new offers.txt, download all the new photos and update
+		// shopping
+		// offer,
+		// else do nothing
+		StringBuffer fileData = Utilities.readStringFromFile(offers_dir,
+				"offers.txt");
+
+		if (!fileData.toString().equalsIgnoreCase(lastoffers)) {
+
+			Log.d(TAG, "new updates are available");
+
+			// JSONObject jObj = null;
+			// try {
+			// jObj = new JSONObject(fileData.toString());
+			// } catch (JSONException e) {
+			// // TODO Auto-generated catch block
+			// e.printStackTrace();
+			// }
+
+			// Integer[] shopping_offers_ids = new
+			// Integer[shoppingoffers.size()];
+			// ArrayList<Integer> ids = new ArrayList<Integer>();
+			// int max_id = 0;
+			// for (int i = 0; i < shoppingoffers.size(); i++) {
+			// // shopping_offers_ids[i] = shoppingoffers.get(i).getId();
+			// // ids.add(shoppingoffers.get(i).getId());
+			// int current_id = shoppingoffers.get(i).getId();
+			// max_id = (max_id > current_id) ? max_id : current_id;
+			// Log.d(TAG, "max id of current offers is :" + max_id);
+			// }
+
+			/**
+			 * Check in JSONArray for new photos.
+			 */
+
+			// JSONArray jsonArray;
+			// try {
+			// jsonArray = jObj.getJSONArray("stream");
+			//
+			// for (int i = 0; i < jsonArray.length(); i++) {
+			// JSONObject jsonObject = jsonArray.getJSONObject(i);
+			//
+			// if (jsonObject.getString("verb").equals("Photo")) {
+			// int id = jsonObject.getInt("id");
+			// if (id > max_id) {
+			// Log.d(TAG, "we have a photo that is more recent");
+			// // 1. redo everything
+			// // 2. check what is already there and update
+			// // easier solution => redo everything :P
+			// resetOffers(lastoffers);
+			// break;
+			// }
+			// }
+			// }
+			// } catch (JSONException e) {
+			// // TODO Auto-generated catch block
+			// e.printStackTrace();
+			// }
+			return false;
+		}
+		Log.d(TAG, "the situation is already updated");
+		return true;
+	}
+
+	private void updateOffers() {
+		if (isUpdated()) {
+			if (shoppingoffers.isEmpty())
+				createOffersFromFile();
+			else
+				initializeGallery();
+		} else {
+			Utilities.vibrate(OffersActivity.this,
+					Utilities.UPDATEVIBRATEPATTERN);
+			shoppingoffers.clear();
+			Log.d(TAG, "shopping offers size after clear: "
+					+ shoppingoffers.size());
+			// build the string request to TwitterIDoServer Diaspora Client API
+			String response = getOffersFromDiaspora();
+			Utilities.saveResponseToFile(response, "offers.txt", offers_dir);
+			createOffersFromFile();
+		}
+	}
+
+	private void createOffersFromFile() {
+
+		StringBuffer fileData = Utilities.readStringFromFile(offers_dir,
+				"offers.txt");
+		JSONObject jObj = null;
+		try {
+			jObj = new JSONObject(fileData.toString());
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		try {
+
+			JSONObject jsonObject = jObj.getJSONObject("stream");
+
+			Log.d(TAG, "this is the string array: " + jsonObject.toString());
+			MakeOffersTask makeOffersTask = new MakeOffersTask();
+			makeOffersTask.execute(jsonObject);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private String getOffersFromDiaspora() {
+
+		Log.d(TAG, "calling get offers from diaspora");
+		String params = "?user=" + getCurrentUser().getFullName() + service;
+		String requestOffers = uri + "activities/" + getActivity()
+				+ "/week.json" + params;
+
+		// get the response
+		MakeGetRequest request = new MakeGetRequest(this);
+		request.execute(requestOffers);
+		String response = null;
+		try {
+			response = request.get();
+			Log.d(TAG, "offers response: " + response);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return response;
+
+	}
+
+	public class ImageAdapterCircleGallery extends BaseAdapter {
+
+		private Context mContext;
+
+		private Integer[] mImageIds;
+		private String[] mImageUrls;
+		private Drawable[] mImageDrawables;
+
+		private Bitmap[] mImageBitmaps;
+
+		public Bitmap[] getmImageBitmaps() {
+			return mImageBitmaps;
+		}
+
+		public void setmImageBitmaps(Bitmap[] mImageBitmaps) {
+			this.mImageBitmaps = mImageBitmaps;
+		}
+
+		public Drawable[] getmImageDrawables() {
+			return mImageDrawables;
+		}
+
+		public void setmImageDrawables(Drawable[] mImageDrawables) {
+			this.mImageDrawables = mImageDrawables;
+		}
+
+		public String[] getmImageUrls() {
+			return mImageUrls;
+		}
+
+		public void setmImageUrls(String[] mImageUrls) {
+			this.mImageUrls = mImageUrls;
+		}
+
+		public Integer[] getmImageIds() {
+			return mImageIds;
+		}
+
+		public void setmImageIds(Integer[] mImageIds) {
+			this.mImageIds = mImageIds;
+		}
+
+		public ImageAdapterCircleGallery(Context c) {
+			mContext = c;
+		}
+
+		// public ImageAdapterCircleGallery(Context c, Integer[] imgIds) {
+		// mContext = c;
+		// mImageIds=imgIds;
+		//
+		// }
+
+		public int getCount() {
+			return mImageDrawables.length;// Integer.MAX_VALUE;
+		}
+
+		public Object getItem(int position) {
+			return position;// getPosition(position);
+		}
+
+		public long getItemId(int position) {
+			return position;// getPosition(position);
+		}
+
+		public View getView(int position, View convertView, ViewGroup parent) {
+
+			Log.d(TAG, "drawing offer # " + position + " of "
+					+ mImageDrawables.length);
+			ImageView i = new ImageView(mContext);
+			// position = getPosition(position);
+
+			i.setImageDrawable(mImageDrawables[position]);
+
+			// i.setImageBitmap(mImageBitmaps[position]);
+			// i.setImageResource(R.drawable.aase);
+			int height = parent.getHeight();
+			i.setLayoutParams(new Gallery.LayoutParams(height, height));
+
+			i.setScaleType(ImageView.ScaleType.FIT_XY);
+			i.setPadding(20, 20, 20, 20);
+
+			// i.setBackgroundColor(R.color.actionbar_background_light);
+
+			RelativeLayout rl = new RelativeLayout(mContext);
+			rl.setPadding(10, 10, 10, 10);
+
+			// TextView captionNotification= new TextView(mContext);
+			// captionNotification.setText("This is user "+position);
+			// captionNotification.setTextSize(30);
+			// LinearLayout l = new LinearLayout(mContext);
+			// l.setOrientation(LinearLayout.VERTICAL);
+			// l.addView(i);
+			// l.addView(captionNotification);
+			// return i;
+			rl.addView(i);
+
+			return rl;
+		}
+
+		public int checkPosition(int position) {
+			return getPosition(position);
+		}
+
+		int getPosition(int position) {
+			if (position >= mImageDrawables.length) {
+				position = position % mImageDrawables.length;
+			}
+			return position;
+		}
+	}
+
+	@Override
+	protected void onResume() {
+
+		super.onResume();
+
+		initializeButtons(R.id.homepageButton_o, R.id.friendspageButton_o,
+				R.id.offerpageButton_o, R.id.newofferButton_o);
+		Log.d(TAG, "user interface is initialized");
+
+		
+		
+
+		initializeData();
+		Log.d(TAG, "data has been initialized");
+
+		if (!shoppingoffers.isEmpty())
+			initializeGallery();
+
+		initializeListeners();
+	}
+
+	private void initializeListeners() {
+		statusListener = new StatusListener() {
+
+			public void onStatusChanged(GHEvent e) {
+				Log.d(TAG, "onstatuschanged triggered");
+
+				// CREATE DIALOG DISPLAYING NEW EVENT
+				// String message = e.actor.getStatus() == 1 ?
+				// getString(R.string.offline) : getString(R.string.online);
+				// Utilities.createAlertDialogue(OffersActivity.this,
+				// e.actor.getFullName() + message);
+
+				if (e.content.contains("spark")) {
+					updateOffers();
+				}
+
 				Intent home = new Intent(OffersActivity.this,
-						PersonalEMActivity.class);
+						HomeActivity.class);
+				home.putExtra("actor", e.actor);
+				home.putExtra("content", e.content);
+				home.putExtra("activity", e.activity);
 				startActivity(home);
 			}
-		});
 
+		};
+		((PersonalEMApplication) getApplication())
+				.addStatusListener(statusListener);
 	}
 
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (requestCode == CAMERA_PIC_REQUEST) {
-			if (resultCode == RESULT_OK) {
-
-				Uri selectedImage = imageUri;
-
-				Log.d(TAG, "RESULT_OK");
-
-				getContentResolver().notifyChange(selectedImage, null);
-				ImageView imageView = (ImageView) findViewById(R.id.PhotoCaptured);
-				ContentResolver cr = getContentResolver();
-				Bitmap bitmap;
-				try {
-					bitmap = android.provider.MediaStore.Images.Media
-							.getBitmap(cr, selectedImage);
-
-					imageView.setImageBitmap(bitmap);
-
-					Toast.makeText(this,
-							"Uploaded " + selectedImage.toString(),
-							Toast.LENGTH_LONG).show();
-				} catch (Exception e) {
-					Toast
-							.makeText(this, "Failed to upload",
-									Toast.LENGTH_SHORT).show();
-					Log.e("Camera", e.toString());
-				}
-
-				try {
-					//httpPostImage(imageUri);
-					postImage(imageUri);
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				// data.getExtras()
-
-				// ImageView image =(ImageView)
-				// findViewById(R.id.PhotoCaptured);
-				// image.setImageBitmap(thumbnail);
-			} else {
-				Toast.makeText(OffersActivity.this, "Picture NOt taken",
-						Toast.LENGTH_LONG);
-			}
-		}
-
-		super.onActivityResult(requestCode, resultCode, data);
-	}
-
-	private void postImage(Uri img_uri) throws IOException {
+	@Override
+	public void onDestroy() {
 		// TODO Auto-generated method stub
-		File f = new File(img_uri.getPath());
-		HttpClient postClient = getClient();
-		HttpPost postImage = new HttpPost(
-				uri+"activities/"+this.activity+"/upload.json?user="+this.user+diaspora+
-				"&original_filename="+f.getName());
-		FileEntity fEntity = new FileEntity(f,"image/*");
-		
-		postImage.setEntity(fEntity); 
-		
-		HttpResponse response = postClient.execute(postImage);
-		
-				HttpEntity resEntity = response.getEntity();
-				if (resEntity != null) {
-					Log.i("response", (resEntity != null ? " not null " : " null "));
-					Log.i("response", (resEntity.getContent().toString()));
-				}
+
+		super.onDestroy();
 
 	}
 
-	public static byte[] getBytesFromFile(File file) throws IOException {
-        InputStream is = new FileInputStream(file);
-    
-        // Get the size of the file
-        long length = file.length();
-    
-        if (length > Integer.MAX_VALUE) {
-            // File is too large
-        }
-    
-        // Create the byte array to hold the data
-        byte[] bytes = new byte[(int)length];
-    
-        // Read in the bytes
-        int offset = 0;
-        int numRead = 0;
-        while (offset < bytes.length
-               && (numRead=is.read(bytes, offset, bytes.length-offset)) >= 0) {
-            offset += numRead;
-        }
-    
-        // Ensure all the bytes have been read in
-        if (offset < bytes.length) {
-            throw new IOException("Could not completely read file "+file.getName());
-        }
-    
-        // Close the input stream and return bytes
-        is.close();
-        return bytes;
-    }
-	/**
-	 * // public class ImageAdapter extends BaseAdapter { // int
-	 * mGalleryItemBackground; // private Context mContext; // // private
-	 * Integer[] mImageIds = { // R.drawable.ove, // R.drawable.tove, //
-	 * R.drawable.aase, // R.drawable.birthe, // R.drawable.shopping, // }; //
-	 * // public ImageAdapter(Context c) { // mContext = c; // TypedArray a =
-	 * obtainStyledAttributes(R.styleable.AppTheme); // mGalleryItemBackground =
-	 * a.getResourceId( // R.styleable.AppTheme_listDragShadowBackground, 0); //
-	 * a.recycle(); // } // // public int getCount() { // return
-	 * mImageIds.length; // } // // public Object getItem(int position) { //
-	 * return position; // } // // public long getItemId(int position) { //
-	 * return position; // } // // public View getView(int position, View
-	 * convertView, ViewGroup parent) { // ImageView i = new
-	 * ImageView(mContext); // // i.setImageResource(mImageIds[position]); //
-	 * i.setLayoutParams(new Gallery.LayoutParams(250, 200)); //
-	 * i.setScaleType(ImageView.ScaleType.FIT_XY); //
-	 * i.setBackgroundResource(mGalleryItemBackground); // // return i; // } //
-	 * }
-	 * @throws Exception 
-	 */
-	
-	private byte[] prepareBody(String boundary, File file, String activity) throws Exception {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream((int)file.length());
-		PrintWriter writer = new PrintWriter(baos);
-		String CRLF = "\r\n";
-		String charset = "utf8";
+	public void onConfigurationChanged(Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		onStart();
 
-		// Send normal param.
-//		writer.append("--" + boundary).append(CRLF);
-//		writer.append("Content-Disposition: form-data; name=\"activity\"")
-//				.append(CRLF);
-//		writer.append("Content-Type: text/plain; charset=" + charset)
-//				.append(CRLF);
-//		writer.append(CRLF);
-//		writer.append(activity).append(CRLF).flush();
+	}
 
-		// Send binary file.
-		writer.append("--" + boundary).append(CRLF);
-		writer.append(
-				"Content-Disposition: form-data; name=\"myfile\"; filename=\""
-						+ file.getName() + "\"").append(CRLF);
-		writer.append(
-				"Content-Type: "
-						+ URLConnection.guessContentTypeFromName(file
-								.getName())).append(CRLF);
-//		writer.append("Content-Transfer-Encoding: binary").append(CRLF);
-		writer.append(CRLF).flush();
-		InputStream input = null;
-		try {
-			input = new FileInputStream(file);
-			byte[] buffer = new byte[1024];
-			for (int length = 0; (length = input.read(buffer)) > 0;) {
-				byte[] encoded = Base64Coder.encodeBytes(buffer,0,length);
-				baos.write(encoded, 0, encoded.length);
-				//baos.write(buffer, 0, length);
-				
+	public class MakeOffersTask extends AsyncTask<JSONObject, Integer, Void> {
+
+		ProgressDialog dialog = null;
+
+		@Override
+		protected void onPreExecute() {
+
+			dialog = ProgressDialog.show(OffersActivity.this, "",
+					"Loading. Please wait...", true);
+			dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+		}
+
+		private Drawable ImageOperations(String url, String saveFilename) {
+
+			String filename = offers_dir.getPath() + "/" + saveFilename;
+			String filename_tab = offers_dir.getPath() + "/tab_" + saveFilename;
+
+			File f = new File(filename);
+
+			Drawable bitmap = null;
+
+			// first if the file is not there, download the image from the url
+			// then put it into a file (yes, I want to cache the files)
+			// second create a drawable from the image file saved on the phone
+			// here we assume that the name of the offer will be saved with
+			// username_offer_offerid in the offers directory
+			try {
+				if (!f.exists()) {
+					InputStream is = (InputStream) this.fetch(url);
+
+					try {
+						// save image to filename
+						FileOutputStream out = new FileOutputStream(filename);
+						IO.copy(is, out); // copy copy image to file ;)
+						out.close();
+
+						// create a thumbnail to display in the view
+						Bitmap scaled = Utilities.createThumbnail(Uri
+								.parse("file://" + filename));
+
+						FileOutputStream outTabnail = new FileOutputStream(
+								filename_tab);
+						scaled.compress(Bitmap.CompressFormat.JPEG, 100,
+								outTabnail);
+
+						bitmap = new BitmapDrawable(scaled);
+						outTabnail.close();
+
+						System.gc(); // call garbage collector
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+
+				} else {
+					FileInputStream is = new FileInputStream(new File(
+							filename_tab));
+					bitmap = Drawable.createFromStream(is, filename_tab);
+					is.close();
+				}
+
+				// Drawable d =
+				// + "/" + saveFilename);
+
+				return bitmap;
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+				return null;
+			} catch (IOException e) {
+				e.printStackTrace();
+				return null;
 			}
-//			output.flush(); // Important! Output cannot be closed. Close of
-							// writer will close output as well.
-		} finally {
-			if (input != null)
-				try {
-					input.close();
-				} catch (IOException logOrIgnore) {
+		}
+
+		public Object fetch(String address) throws MalformedURLException,
+				IOException {
+			URL url = new URL(address);
+			Object content = url.getContent();
+			return content;
+		}
+
+		private Offer setNewOffer(JSONObject jsonObject) throws JSONException {
+
+			Offer newOffer = new Offer();
+			int id = jsonObject.getInt("id");
+
+			JSONObject object = jsonObject.getJSONObject("object");
+			String originalImageUrl = object.getString("remotePhotoPath")
+					+ object.getString("remotePhotoName");
+			String actor = jsonObject.getJSONObject("actor").getString("id");
+			String content = object.getString("content");
+			JSONArray jTags = object.getJSONArray("tags");
+			String[] tags = new String[jTags.length()];
+			for (int j = 0; j < jTags.length(); j++) {
+				tags[j] = jTags.get(j).toString();
+			}
+			String published = jsonObject.getString("published");
+
+			newOffer.setContent(content);
+			newOffer.setId(id);
+			newOffer.setOriginalImageUrl(originalImageUrl);
+			newOffer.setPublished(published);
+			newOffer.setTags(tags);
+
+			// String filename = getCurrentUser().getFullName() + "_offer_" + id
+			// + ".jpg";
+			ArrayList<User> contacts = getContacts();
+			contacts.add(getCurrentUser());
+			String actor_name = Utilities.getContactById(
+					Integer.parseInt(actor), contacts).getFullName();
+			String filename = actor_name + "_offer_" + id + ".jpg";
+			Drawable imageFile = ImageOperations(originalImageUrl, filename);
+			newOffer.setImageFile(imageFile);
+
+			// set the actor who created the offer by checking that with the
+			// contacts that I already have.
+			int actor_id = Integer.parseInt(actor);
+			if (getCurrentUser().getUserId() == actor_id) {
+				newOffer.setSharedByUser(getCurrentUser());
+			} else {
+
+				for (User contact : getContacts()) {
+					if (contact.getUserId() == actor_id) {
+						newOffer.setSharedByUser(contact);
+						break; // found it, go out
+					}
 				}
-		}
-		writer.append(CRLF).flush(); // CRLF is important! It indicates end
-										// of binary boundary.
+			}
 
-		// End of multipart/form-data.
-		writer.append("--" + boundary + "--").append(CRLF);
-		writer.close();
-		return baos.toByteArray();
-	}
-	private void send(String url, File file, String activity) throws Exception {
-		String boundary = Long.toHexString(System.currentTimeMillis()); // Just
-																		// generate
-																		// some
-																		// unique
-																		// random
-																		// value.
-//		String CRLF = "\r\n"; // Line separator required by multipart/form-data.
+			Log.d(TAG, "this photo has been shared by user :"
+					+ Integer.parseInt(actor));
 
-		byte[] body = prepareBody(boundary, file, activity);
-		long bodylength = body.length;
-		Log.i(TAG,"Sending body-length: "+bodylength);
-		URLConnection connection = new URL(url).openConnection();
-		connection.setDoOutput(true);
-//		connection.setDoInput(true);
-		connection.setRequestProperty("Content-Length",bodylength+"");
-		connection.setRequestProperty("Content-Type",
-				"multipart/form-data; boundary=" + boundary);
-		connection
-				.setRequestProperty("User-Agent",
-						"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.3) Gecko/20100401");
-		OutputStream os = connection.getOutputStream();
-		try {
-			os.write(body);
-			Log.i(TAG,"File sent");
-			int status = ((HttpURLConnection)connection).getResponseCode();
-			Log.i(TAG, "upload image response code: "+status);
+			return newOffer;
 		}
-		finally {
-			os.close();
-//			connection.getInputStream().close();
-		}
-		
 
-//		PrintWriter writer = null;
-//		try {
-//			OutputStream output = connection.getOutputStream();
-//			String charset = "utf8";
-//			writer = new PrintWriter(new OutputStreamWriter(output, charset),
-//					true); // true = autoFlush, important!
-//
-//			// Send normal param.
-//			writer.append("--" + boundary).append(CRLF);
-//			writer.append("Content-Disposition: form-data; name=\"activity\"")
-//					.append(CRLF);
-//			writer.append("Content-Type: text/plain; charset=" + charset)
-//					.append(CRLF);
-//			writer.append(CRLF);
-//			writer.append(activity).append(CRLF).flush();
-//
-//			// Send binary file.
-//			writer.append("--" + boundary).append(CRLF);
-//			writer.append(
-//					"Content-Disposition: form-data; name=\"myfile\"; filename=\""
-//							+ file.getName() + "\"").append(CRLF);
-//			writer.append(
-//					"Content-Type: "
-//							+ URLConnection.guessContentTypeFromName(file
-//									.getName())).append(CRLF);
-//			writer.append("Content-Transfer-Encoding: binary").append(CRLF);
-//			writer.append(CRLF).flush();
-//			InputStream input = null;
-//			try {
-//				input = new FileInputStream(file);
-//				byte[] buffer = new byte[1024];
-//				for (int length = 0; (length = input.read(buffer)) > 0;) {
-//					output.write(buffer, 0, length);
-//				}
-//				output.flush(); // Important! Output cannot be closed. Close of
-//								// writer will close output as well.
-//			} finally {
-//				if (input != null)
-//					try {
-//						input.close();
-//					} catch (IOException logOrIgnore) {
-//					}
-//			}
-//			writer.append(CRLF).flush(); // CRLF is important! It indicates end
-//											// of binary boundary.
-//
-//			// End of multipart/form-data.
-//			writer.append("--" + boundary + "--").append(CRLF);
-//			Log.i(TAG,"File sent");
-//			
-//			int status = ((HttpURLConnection)connection).getResponseCode();
-//			Log.i(TAG, "upload image response code: "+status);
-//		} finally {
-//			if (writer != null)
-//				writer.close();
-//			connection.getInputStream().close();
-//		}
+		@Override
+		protected Void doInBackground(JSONObject... params) {
+
+			try {
+
+				Iterator iterator = params[0].keys();
+				// browse all the days of the last week with data
+				while (iterator.hasNext()) {
+					String key = (String) iterator.next();
+
+					JSONArray jsonArray = params[0].getJSONArray(key);
+
+					for (int j = 0; j < jsonArray.length(); j++) {
+						JSONObject jsonObject = jsonArray.getJSONObject(j);
+						if (jsonObject.getString("verb").equals("Photo")) {
+							shoppingoffers.add(setNewOffer(jsonObject));
+						}
+						
+					}
+					
+
+				}
+				Collections.sort(shoppingoffers, new OfferComparator());
+				
+				// if (jsonObject.getString("verb").equals("Photo")) {
+				// shoppingoffers.add(setNewOffer(jsonObject));
+				// }
+
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(Void result) {
+			dialog.dismiss();
+			initializeGallery();
+		}
 	}
 
-	private void httpPostImage(Uri image_uri) throws Exception {
-		String uri = "http://idea.itu.dk:8080/upload"+"?user="+this.user+"@idea.itu.dk:3000";
-		this.send(uri, new File(image_uri.getPath()), this.activity);
-		
-//		HttpClient uploadClient = getClient();
-//		String actor = this.user;
-//
-//		// HttpPost post = new
-//		// HttpPost("http://idea.itu.dk:8080/activities/"+activity+"/upload"+"?user="+actor+"@idea.itu.dk:3000");
-//		// String params = "?user=" + this.user + diaspora;
-//		HttpPost post = new HttpPost(this.uri + "upload");// +params);
-//
-//		// InputStream in = this.getContentResolver().openInputStream(uri);
-//		// InputStreamBody bin = new InputStreamBody(in, uri.getPath());
-//		File f = new File(image_uri.getPath());
-//		FileBody fb = new FileBody(f);
-//
-//		Log.d(TAG, image_uri.getPath());
-//		Log.d(TAG, fb.getTransferEncoding());
-//
-//		MultipartEntity reqEntity = new MultipartEntity();
-//
-//		// reqEntity.addPart("myfile", fb);
-//
-//		reqEntity.addPart("activity", new StringBody("shopping"));
-//		reqEntity.addPart("user", new StringBody(this.user + diaspora));
-//
-//		Log.d(TAG, "http client " + post.getURI().toASCIIString());
-//		post.setEntity(reqEntity);
-//
-//		HttpResponse response = uploadClient.execute(post);
-//
-//		HttpEntity resEntity = response.getEntity();
-//		if (resEntity != null) {
-//			Log.i("response", (resEntity != null ? " not null " : " null "));
-//			Log.i("response", (resEntity.getContent().toString()));
-//		}
+	protected void offerUploaded() {
+		shoppingoffers.clear();
+		Log.d(TAG, "new shopping offers: " + shoppingoffers.size());
+		updateOffers();
+		Log.d(TAG, "new shopping offers: " + shoppingoffers.size());
 	}
+
 }

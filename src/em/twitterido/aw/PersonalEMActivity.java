@@ -1,40 +1,51 @@
 package em.twitterido.aw;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.ByteBuffer;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Date;
+import java.util.concurrent.ExecutionException;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import android.app.Activity;
-import android.content.BroadcastReceiver;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Vibrator;
+import android.os.StrictMode;
+import android.os.StrictMode.ThreadPolicy;
+import android.os.StrictMode.VmPolicy;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.ImageButton;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.BaseAdapter;
+import android.widget.Gallery;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.RelativeLayout.LayoutParams;
 import dk.itu.yili.nfc.parser.NFCIntentParser;
+import em.twitterido.aw.PersonalEMApplication.StatusListener;
 
 /**
  * 
@@ -72,21 +83,18 @@ import dk.itu.yili.nfc.parser.NFCIntentParser;
  *         number of events available. Currently there is no filter for the
  *         OBJECT ID or USER ID.
  */
-public class PersonalEMActivity extends Activity {
+public class PersonalEMActivity extends BaseActivity {
 
-	private static final String TAG = "PersonalEM";
+	public static final String ACTIVITY_INTENT = "em.twitterido.aw.PersonalEMActivity.ACTIVITY";
+	// public static final String SHARE_INTENT =
+	// "em.twitterido.aw.PersonalEMActivity.SHARE";
 
-	public static final String ACTIVITY_INTENT = "em.twitterido.aw.BasicEMActivity.ACTIVITY";
-	public static final String SHARE_INTENT = "em.twitterido.aw.BasicEMActivity.SHARE";
-	public static final String GHEVENT_INTENT = "em.twitterido.aw.BasicEMActivity.GH_EVENT";
+	public static final String GHEVENT_INTENT = "em.twitterido.aw.PersonalEMActivity.GH_EVENT";
+
 	// public static final String NFC_SHARE_INTENT =
 	// "em.twitterido.aw.BasicEMActivity.NFC_SHARE";
-	public static final String NFC_DISCOVERED_INTENT = "android.nfc.action.NDEF_DISCOVERED";
 
-	private static final String uri = "http://idea.itu.dk:8080/";
-	private static final String diaspora = "@idea.itu.dk:3000";
-	private SharedPreferences preferences;
-	private HttpClient client = new DefaultHttpClient();
+	public static final String NFC_DISCOVERED_INTENT = "android.nfc.action.NDEF_DISCOVERED";
 
 	/* DEBUG testing elements */
 	public TextView activityNotification;
@@ -95,273 +103,362 @@ public class PersonalEMActivity extends Activity {
 	public View lastSelectedView = null;
 
 	/* preferences and configuration */
+	private SharedPreferences preferences;
 	public static final String CONFIG_USER = "config_user"; // where the
-															// preferences are
-	public String user; // name of the current user 1. retrieved by preferences
-						// or updated from the menu
-	protected ArrayList<String> contact_names = new ArrayList<String>(); // names
-																			// of
-																			// the
-																			// contacts
-																			// of
-																			// the
-																			// user
-																			// for
-																			// an
-																			// activity
-	public int[] contacts; // ids of the contacts of a user for an activity
-	public String activity; // TODO: define how to discern the activity: user
-							// input, nfc recognition
+	// preferences are
 
-	public String object; // I should get this information form the usb
-							// accessory mode I can actually check on the value
-							// of the channel... mm no
+	public static final int SETUSER = 0123;
+
 	public String content; // the accessory mode is sending the messages
-							// defining the content + content is defined when an
-							// offer is posted = url of the image just posted
+	// defining the content + content is defined when an
+	// offer is posted = url of the image just posted
 
-	HashMap<String, Integer> notificationCounter = new HashMap<String, Integer>(); // this
-																					// object
-																					// should
-																					// keep
-																					// the
-																					// temporary
-																					// status
-																					// of
-																					// who
-																					// is
-																					// out
-																					// and
-																					// who
-																					// is
-																					// sharing
+	private boolean ghserviceStarted;
+	private Drawable[] profile_images;
 
-	BroadcastReceiver br = new BroadcastReceiver() {
-
-		public void onReceive(Context context, Intent intent) {
-			// TODO Auto-generated method stub
-			Log.d(TAG, intent.getAction());
-
-			if (intent.getAction().equals(PersonalEMActivity.GHEVENT_INTENT)) {
-				Log.d(TAG, "GHEVENT_INTENT catched");
-				updateInfo(intent);
-			}
-
-			if (intent.getAction().equals(ADKService.SENSOR_EVENT)) {
-				Log
-						.d(TAG,
-								"ADKService SENSOR EVENT catched in Broadcast receiver");
-				activityNotification.setText("Here we have a sensor intent!!");
-				handleSensorEvent(intent);
-			}
-
-			// if
-			// (intent.getAction().equals("android.nfc.action.TAG_DISCOVERED")){
-			// Log.d(TAG, "NFC_DISCOVERED Receiver catched it");
-			//				
-			// String s = NFCIntentParser.parse(intent);
-			// Log.d(TAG, "NFC string parsed"+s);
-			//		
-			// }
-			// if
-			// (intent.getAction().equals(PersonalEmActivity.NFC_SHARE_INTENT))
-			// {
-			// Log.d(TAG, "NFC_SHARE catched");
-			// if (intent.getExtras() != null) {
-			// shareSpark(intent.getExtras());
-			// }
-			//
-			// }
-
-		}
-
-	};
-
-	private String actor;
-
-	public HttpClient getClient() {
-		return client;
-	}
-
-	protected void handleSensorEvent(Intent intent) {
-		// TODO Auto-generated method stub
-		Bundle extras = intent.getExtras();
-		if (extras == null) {
-			return;
-		}
-		Log.d(TAG, "we have extras from SensorEvent");
-
-		byte my = extras.getByte("my");
-		// my = (byte) (my - 48);// test this first :) it might be not needed
-		my = (byte) (my);
-		Log.d(TAG, "SENDER ADDRESS IS: " + my);
-
-		int type = extras.getInt("type");
-		byte data[] = extras.getByteArray("data");
-
-		activityNotification = (TextView) findViewById(R.id.activityNew);
-		String msg = "";
-
-		msg += "Actor: " + Byte.toString(my);
-		msg += " just sent this message: ";
-		// for (int i = 0; i < data.length; i++) {
-		// msg += Byte.toString(data[i]) + " | ";
-		// }
-		msg += Byte.toString(data[0]) + " | ";
-		if (my == 1) {
-			// then I have a rollator (I know it is a stupid assumption but lets
-			// try)
-			ByteBuffer bb = ByteBuffer.wrap(data, 0, data.length); // I skip the
-			// first
-			// byte
-			// because that is supposed to be the state of the button:
-			// 1 => active (then converted to start),
-
-			// 0 => inactive (then converted to stop)
-			Toast.makeText(getApplicationContext(), "data length: "
-					+ data.length + " ByteBuffer length: " + bb.capacity(),
-					Toast.LENGTH_LONG);
-			Log.d(TAG, "data length: " + data.length + " ByteBuffer length: "
-					+ bb.capacity());
-
-			bb.order(null);
-			Short value = bb.getShort(1);
-			// // int integer = (int)( // NOTE: type cast not necessary for int
-			// // (0xff & data[0]) << 24 |
-			// // (0xff & data[1]) << 16 |
-			// // (0xff & data[2]) << 8 |
-			// // (0xff & data[3]) << 0);
-			// // Float flt = Float.intBitsToFloat(integer);
-			msg += Short.toString(value);
-		}
-
-		msg += " of type " + type;
-		activityNotification.setText(msg);
-
-		// storing the data from the message received from the ADK
-		// MY => object id
-		// activity => shopping
-		// content => start/stop/distance:
-
-		// MessageGH m = new MessageGH();
-		// m.setmActivity(activity);
-		// m.setmObject(object);
-		// m.setmContent(content);
-
-		if (activity != "unknown") {
-			Intent activityIntent = new Intent(ACTIVITY_INTENT);
-			activityIntent.putExtra("user", user);
-			activityIntent.putExtra("object", object);
-			activityIntent.putExtra("activity", activity);
-			activityIntent.putExtra("content", content);
-			sendBroadcast(activityIntent);
-			Log.d(TAG, "Created a New Activity " + activity);
-		} else {
-			Log.d(TAG, "Unknown activity with object " + object);
-			activityNotification.setText("Unknown activity with object "
-					+ object);
-		}
-
-	}
-
-	/**
-	 * 
-	 * method called when a new GHEVENT_INTENT has been filtered
-	 */
-	protected void updateInfo(Intent intent) {
-		Bundle extras = intent.getExtras();
-		if (extras == null) {
-			return;
-		}
-		Log.d(TAG, "we have extras from sensor");
-		if (extras.getString("content") != null) {
-			if (extras.getString("content").equals("start")) {
-				notificationCounter.put(extras.getString("actor"), 1);
-				notificationCounter.put("group", +1);
-			} else if (extras.getString("state").equals("stop")
-					&& notificationCounter.get("group") != 0) {
-				notificationCounter.put(extras.getString("actor"), 0);
-				notificationCounter.put("group", -1);
-			}
-		}
-		activityNotification = (TextView) findViewById(R.id.activityNew);
-		activityNotification.setText(notificationCounter + " New activities!");
-
-		// vibrate to signal that new events are available
-		Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-
-		// // 1. Vibrate for 1000 milliseconds
-		// long milliseconds = 1000;
-		// v.vibrate(milliseconds);
-
-		// 2. Vibrate in a Pattern with 500ms on, 500ms off for 5 times
-		long[] pattern = { 500, 300, 500, 300, 500, 300 };
-		v.vibrate(pattern, -1);
-
-	}
-
-	/* *
-	 * method called when a NFC_SHARE_INTENT has been filtered or later when a
-	 * picture will be shared! :)
-	 */
-	protected void shareSpark(Bundle extras) {
-		// TODO Auto-generated method stub
-
-		this.activityNotification.setText(content);
-
-		/*
-		 * This should be modified when the NFC parsing is ready and we should
-		 * have an UPDATE to the genie hub
-		 */
-		Intent shareIntent = new Intent(SHARE_INTENT);
-		shareIntent.putExtra("actor", actor);
-		shareIntent.putExtra("activity", activity);
-		shareIntent.putExtra("content", content);
-		sendBroadcast(shareIntent);
-
-	}
+	protected StatusListener statusListener;
 
 	/** Called when the activity is first created. */
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+	public void doOnCreate() {
 		setContentView(R.layout.main);
+	}
 
-		initializeUI();
+	private void initializeGallery() {
 
-		/**
-		 * 
-		 * Set up NFC intent filter
-		 * 
-		 */
-		Intent intent = getIntent();
+		StrictMode.setVmPolicy(new VmPolicy.Builder().detectAll().penaltyLog()
+				.build());
+		StrictMode.setThreadPolicy(new ThreadPolicy.Builder().permitAll()
+				.build());
 
-		if (intent.getAction().equals("android.nfc.action.NDEF_DISCOVERED")) {
-			Log.d(TAG, "NFC_DISCOVERED Receiver catched it oncreate");
+		String[] mImageUrls = getProfilesImageUrls();
 
-			String s = NFCIntentParser.parse(intent);
-			Log.d(TAG, "NFC string parsed" + s);
-			activityNotification.setText("NFC string: " + s);
+		// asynch task to download the images from mImageUrls
+		if (profile_images == null) {
+			profile_images = new Drawable[mImageUrls.length];
+
+			DownloaderTask task = new DownloaderTask();
+			task.execute(mImageUrls);
+
+		} else {
+			this.onProfileImages();
+		}
+
+	}
+
+	public void onProfileImages() {
+		YappsCircleGallery contacts_gallery = (YappsCircleGallery) findViewById(R.id.gallery);
+
+		ImageAdapterCircleGallery galleryAdapter = new ImageAdapterCircleGallery(
+				this);
+
+		galleryAdapter.setmImageDrawables(profile_images);
+		contacts_gallery.setAdapter(galleryAdapter);
+
+		contacts_gallery.secondaryListener = new OnItemSelectedListener() {
+			public void onItemSelected(AdapterView<?> arg0, View arg1,
+					int arg2, long arg3) {
+
+				TextView t = (TextView) findViewById(R.id.captionText);
+				String name = "";
+
+				// int color =
+				// R.color.myblue;//R.color.actionbar_background_dark;
+
+				int index = arg2 % profile_images.length;
+				if (index == 0) { // this is because the first image belongs to
+					// the current user
+					name = getCurrentUser().getFirstName();
+					// color = R.color.myorange;
+				} else {
+					Log.d(TAG, "position value: " + index);
+					name = getContacts().get(index - 1).getFirstName();
+					// if (getContacts().get(index - 1).getStatus() == 1) {
+					// // color = R.color.mygreen;
+					// }
+				}
+				t.setText(name);
+
+				// arg1.setBackgroundColor(color);
+				Log.d(TAG, "name " + name);
+
+			}
+
+			public void onNothingSelected(AdapterView<?> arg0) {
+				// TODO Auto-generated method stub
+
+			}
+		};
+
+		// routines for initiating communication with friends
+		contacts_gallery
+				.setOnItemLongClickListener(new OnItemLongClickListener() {
+
+					public boolean onItemLongClick(AdapterView<?> arg0,
+							View arg1, int arg2, long arg3) {
+
+						int index = arg2 % profile_images.length;
+						final String num;
+						final String name;
+						final String skypename;
+						boolean isPerson = false;
+						if (index == 0) { // this is because the first image
+							// belongs to
+							// the current user
+
+							num = getCurrentUser().getBio();
+							name = getCurrentUser().getFirstName();
+							isPerson = getCurrentUser().getEntityType().equals(
+									"person");
+							skypename = "sip_aw_"
+									+ getCurrentUser().getFullName();
+							return false; // although I should not be able to
+							// call myself so from here we exit
+							// :)
+
+						} else {
+							Log.d(TAG, "position value: " + index);
+
+							// check if they are a person
+							// if(contacts.get(index - 1).getTags().)
+
+							num = getContacts().get(index - 1).getBio();
+							name = getContacts().get(index - 1).getFirstName();
+							isPerson = getContacts().get(index - 1)
+									.getEntityType().equals("person");
+							skypename = "sip_aw_"
+									+ getContacts().get(index - 1)
+											.getFullName();
+						}
+
+						if (isPerson) {
+							AlertDialog.Builder builder = new AlertDialog.Builder(
+									PersonalEMActivity.this);
+							builder
+									.setMessage(
+											"Do you want to call " + name + "?")
+									.setCancelable(false)
+									.setPositiveButton(
+											"Yes",
+											new DialogInterface.OnClickListener() {
+												public void onClick(
+														DialogInterface dialog,
+														int id) {
+													// Intent intent = new
+													// Intent(
+													// Intent.ACTION_CALL);
+													// intent
+													// .setData(Uri
+													// .parse("tel:"
+													// + num));
+													// startActivity(intent);
+
+													Intent sky = new Intent(
+															"android.intent.action.VIEW");
+													String test = "echo123";
+
+													sky
+															.setData(Uri
+																	.parse("skype:"
+																			+ skypename));
+													startActivity(sky);
+
+												}
+											})
+									.setNegativeButton(
+											"No",
+											new DialogInterface.OnClickListener() {
+												public void onClick(
+														DialogInterface dialog,
+														int id) {
+													dialog.cancel();
+												}
+											});
+							AlertDialog alert = builder.create();
+							alert.show();
+							TextView textView = (TextView) alert
+									.findViewById(android.R.id.message);
+							textView.setTextSize(30);
+
+						}
+						return false;
+					}
+
+				});
+
+	}
+
+	private String[] getProfilesImageUrls() {
+		// TODO Auto-generated method stub
+		String[] images = new String[getContacts().size() + 1];
+		images[0] = getCurrentUser().getImageUrl();
+		// Log.d(TAG, "name 0: " + images[0]);
+		for (int i = 0; i < getContacts().size(); i++) {
+			if (getContacts().get(i).getImageUrl().equals(
+					"/images/user/default.png")) {
+				images[i + 1] = "http://idea.itu.dk:3000"
+						+ "/images/user/default.png";
+			} else
+				images[i + 1] = getContacts().get(i).getImageUrl();
+
+			// Log.d(TAG, "name " + (i + 1) + ": " + images[i + 1]);
+		}
+		return images;
+	}
+
+	private void initializeData() {
+		// TODO Auto-generated method stub
+		SharedPreferences preferences = getSharedPreferences(CONFIG_USER, 0);
+
+		if (preferences.contains("user")) {
+			getUserFromDiaspora(preferences.getString("user", "communityawvej"));
+		} else if (getCurrentUser() == null) {
+			startActivityForResult(new Intent(this, SetUserActivity.class),
+					SETUSER);
+		} else {
+			onCurrentUser();
+		}
+
+	}
+
+	private void onCurrentUser() {
+
+		Log.d(TAG, "the user is set: " + getCurrentUser().getFullName());
+
+		if (getContacts() == null || getContacts().isEmpty()) {
+			setFriends();
+		} else {
+			onFriends();
+		}
+
+	}
+
+	private void onFriends() {
+
+		Log.d(TAG, "contacts number " + getContacts().size());
+		notificationCounter = Utilities
+				.updateNotificationCounter(getContacts());
+
+		initializeUsersStatus();
+
+		initializeGallery();
+		Log.d(TAG, "Gallery is set.. how long it takes for displaying?");
+
+		initializeServices();
+		Log.d(TAG, "Services are launched ");
+	}
+
+	private void initializeUsersStatus() {
+		if (isFriendsStatusUpdated()) {
+			return;
+		} else {
+			String response = getTodayStreamFromDiaspora();
+			Utilities.saveResponseToFile(response, "stream.txt", stream_dir);
+			Utilities.updateActiveThings(stream_dir, "stream.txt",
+					getContacts()); // this will update contacts :)
 
 		}
 
-		/**
-		 * start the Accessory Service we need to send all the intent that
-		 * activates this activity to the service in order for it to get the
-		 * actual information that the accessory is transmitting
-		 **/
+	}
 
-		Intent megaIntent = getIntent(); // receive the intent from Mega board
-		// broadcasted
-		if (megaIntent.getAction().equals(
-				"android.hardware.usb.action.USB_ACCESSORY_ATTACHED")) {
-			Intent i = new Intent(this, ADKService.class);// generate new intent
-			// for ADK service
-			i.putExtras(megaIntent);
-			startService(i);// start ADK service
-			Log.d(TAG, "Started Service ADKService");
-			activityNotification.setText("ADK connected");
+	private boolean isFriendsStatusUpdated() {
+
+		Log.d(TAG, "check if stream.txt exists and is updated");
+
+		if (!(new File(stream_dir, "stream.txt").exists())) {
+			Log.d(TAG, "stream.txt does not exist, therefore is not updated");
+			return false; // exit
 		}
+
+		String laststream = getTodayStreamFromDiaspora();
+
+		StringBuffer fileData = Utilities.readStringFromFile(stream_dir,
+				"stream.txt");
+
+		if (!fileData.toString().equalsIgnoreCase(laststream)) {
+
+			Log.d(TAG, "new updates are available");
+			return false;
+		}
+		Log.d(TAG, "the situation is already updated");
+		return true;
+	}
+
+	private void onFriendsStatus() {
+
+	}
+
+	private void getUserFromDiaspora(String username) {
+
+		// TODO Auto-generated method stub
+		String params = "?user=" + username + service;
+		String requestProfile = uri + "me.json" + params;
+
+		// get the response
+		// String response = makeGetRequest(requestProfile);
+		MakeGetRequest request = new MakeGetRequest(this);
+		request.execute(requestProfile);
+
+		String response = null;
+		try {
+			response = request.get();
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (ExecutionException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+		JSONObject jObj = null;
+		try {
+			if (response == null) {
+				Log.d(TAG, "empty response");
+			}
+			jObj = new JSONObject(response);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		JSONObject actor = null;
+		try {
+			actor = jObj.getJSONObject("actor");
+			((PersonalEMApplication) getApplication()).currentUser = setNewContact(actor);
+			onCurrentUser();
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	private String getTodayStreamFromDiaspora() {
+
+		Log.d(TAG, "calling get stream from diaspora");
+		String params = "?user=" + getCurrentUser().getFullName() + service;
+		String requestStream = uri + "activities/" + getActivity()
+				+ "/today.json" + params;
+
+		// get the response
+		MakeGetRequest request = new MakeGetRequest(this);
+		request.execute(requestStream);
+		String response = null;
+		try {
+			response = request.get();
+			Log.d(TAG, "stream response: " + response);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return response;
+
+	}
+
+	private void initializeServices() {
+		// TODO Auto-generated method stub
 
 		/**
 		 * TODO: fix this service to serve the GenieHub when included in the
@@ -369,183 +466,188 @@ public class PersonalEMActivity extends Activity {
 		 * generators and listeners.
 		 * 
 		 */
-		startService(new Intent(this, GHService.class));
+		if (!ghserviceStarted) {
+			Intent ghIntent = new Intent(this, GHService.class);
+			ghIntent.putParcelableArrayListExtra("contacts", getContacts());
+			ghIntent.putExtra("currentuser", getCurrentUser());
+			ghIntent.putExtra("activity", getActivity());
+			startService(ghIntent);
+			ghserviceStarted = true;
+		}
 		Log.d(TAG, "Started Service GHService");
 
-		// adding the IntentFilters that will serve to the Broadcast receiver
-		// to manage the intents within the application between the services and
-		// the main activity
-		// 
-
-		IntentFilter flt = new IntentFilter();
-		flt.addAction(PersonalEMActivity.GHEVENT_INTENT);
-		flt.addAction(ADKService.SENSOR_EVENT);
-
-		// flt.addDataScheme("http");
-		// flt.addAction(BasicEmActivity.NFC_DISCOVERED_INTENT);
-		// flt.addAction(BasicEmActivity.NFC_SHARE_INTENT);
-		registerReceiver(br, flt);
+		// start ADKservice listener that will do the updates to diaspora :)
+		Intent adklistenerIntent = new Intent(this, ADKListenerService.class);
+		// adklistenerIntent.putExtra(name, value);
+		startService(adklistenerIntent);
 
 	}
 
-	private void initializeUI() {
+	private void setFriends() {
 		// TODO Auto-generated method stub
-		this.activity = this.getString(R.string.activity);
-
-		getUserfromPref();
-
-		Log.d(TAG, "what is my user? " + user);
-
-		getFriendsfromDiaspora();
-
-		// Gallery g = (Gallery) findViewById(R.id.gallery);
-		// g.setAdapter(new ImageAdapter(this));
-		//
-		// g.setOnItemClickListener(new OnItemClickListener() {
-		// public void onItemClick(AdapterView parent, View v, int position,
-		// long id) {
-		// Toast.makeText(BasicEmActivity.this, "" + position,
-		// Toast.LENGTH_SHORT).show();
-		// }
-		// });
-
-		// YappsCircleGallery yappsGallery = (YappsCircleGallery)
-		// findViewById(R.id.gallery);
-		//		
-		// yappsGallery.secondaryListener = new OnItemSelectedListener() {
-		// public void onItemSelected(AdapterView<?> arg0, View arg1,
-		// int arg2, long arg3) {
-		// // TODO Auto-generated method stub
-		// TextView t = (TextView) findViewById(R.id.captionText);
-		// //String name = contact_names[(arg2 % contact_names.length)];
-		// String name = contact_names.get((arg2 % contact_names.size()));
-		// String started = "ikke";// notificationCounter.get(name) == 0 ?
-		// "ikke ": "";
-		// t.setText(contact_names.get((arg2 % contact_names.size())) + " er "
-		// + started + activity);
-		//
-		// }
-		//
-		// public void onNothingSelected(AdapterView<?> arg0) {
-		// // TODO Auto-generated method stub
-		//
-		// }
-		// };
-		activityNotification = (TextView) findViewById(R.id.activityNew);
-		// activityNotification.setText("On Create, Status: "+
-		// notificationCounter.values());
-
-		ImageButton homeButton = (ImageButton) findViewById(R.id.homeButton);
-		ImageButton offerpageButton = (ImageButton) findViewById(R.id.offerpageButton);
-
-		offerpageButton.setOnClickListener(new OnClickListener() {
-
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
-				Intent offers = new Intent(PersonalEMActivity.this,
-						OffersActivity.class);
-				startActivity(offers);
-			}
-		});
-
-	}
-
-	private void getFriendsfromDiaspora() {
-		// TODO Auto-generated method stub
-
-		this.contact_names.add(this.getString(R.string.groupFriends)); // add
-																		// VENNER
-																		// as
-																		// first
-																		// element
-																		// always
-		HttpClient friendsClient = getClient();
-		String actor = this.user;
-
-		String params = "?user=" + this.user + diaspora;
-		HttpGet get = new HttpGet(this.uri + "activities/" + this.activity
-				+ "/contacts.json" + params);
-
-	
-		Log.d(TAG, "request line: " + get.getParams() + " and uri: "
-				+ get.getURI().toASCIIString());
-        StringBuilder builder = new StringBuilder();
-
 		try {
-            HttpResponse response = friendsClient.execute(get);
-            StatusLine statusLine = response.getStatusLine();
-            int statusCode = statusLine.getStatusCode();
-            if (statusCode == 200) {
-                HttpEntity entity = response.getEntity();
-                InputStream content = entity.getContent();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(content));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    builder.append(line);
-                }
-            } else {
-                Log.e(TAG, "Failed to download JSON statuscode: " + statusCode);
-            }
-        } catch (ClientProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        Log.d(TAG,builder.toString());
-    
+			// setFriendsFromFile();
 
+			String response = getFriendsFromDiaspora();
+			Utilities.saveResponseToFile(response, "contacts.txt",
+					configuration_dir);
+
+			File file = new File(configuration_dir, "contacts.txt");
+			StringBuffer fileData = new StringBuffer(1000);
+			BufferedReader reader = new BufferedReader(new FileReader(file));
+			char[] buf = new char[1024];
+			int numRead = 0;
+			while ((numRead = reader.read(buf)) != -1) {
+				fileData.append(buf, 0, numRead);
+			}
+			reader.close();
+			JSONObject jObj = null;
+			try {
+				jObj = new JSONObject(fileData.toString());
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			/**
+			 * Convert JSONArray to our user type.
+			 */
+			try {
+				((PersonalEMApplication) getApplication()).contacts = new ArrayList<User>();
+				JSONObject con = jObj.getJSONObject("contacts");
+				JSONArray jsonArray = con.getJSONArray("actor");
+				for (int i = 0; i < jsonArray.length(); i++) {
+					JSONObject jsonObject = jsonArray.getJSONObject(i);
+					JSONArray tags = jsonObject.getJSONArray("tags");
+					// Log.i("Contact", "JSon is: " + jsonObject + "\n");
+					getContacts().add(setNewContact(jsonObject));
+				}
+				onFriends();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
-	private void getUserfromPref() {
-		// TODO Auto-generated method stub
-		// do something with user.
-		SharedPreferences preferences = getSharedPreferences(CONFIG_USER, 0);
-		if (!preferences.contains("user")) {
-			Log.d(TAG, "creating activity SetUser");
-			// if not, then start the "Settings" activity
-			startActivity(new Intent(this, SetUserActivity.class));
-			this.user = preferences.getString("user", "communityawvej");
-			return;
-		} else {
-			this.user = preferences.getString("user", "communityawvej");
-			return;
-
+	enum EntityType {
+		person, thing, place;
+		static EntityType fromString(String str) {
+			for (EntityType t : EntityType.values()) {
+				if (t.name().equals(str)) {
+					return t;
+				}
+			}
+			return null;
 		}
+	}
+
+	private User setNewContact(JSONObject jsonObject) throws JSONException {
+		// TODO Auto-generated method stub
+
+		User newContact = new User();
+		int id = jsonObject.getInt("id");
+		String image_url = jsonObject.getString("picture");
+		String gender = jsonObject.getString("gender");
+		String first_name = jsonObject.getString("name");
+		String last_name = jsonObject.getString("nichname");
+		String full_name = jsonObject.getString("preferredUsername");
+		String bio = jsonObject.getString("note");
+
+		JSONArray tags = jsonObject.getJSONArray("tags");
+
+		ArrayList<String> tags_list = new ArrayList<String>(tags.length());
+
+		String entityType = null;
+		for (int i = 0; i < tags.length(); i++) {
+			tags_list.add(tags.getString(i));
+			EntityType t = EntityType.fromString(tags.getString(i));
+			if (null != t) {
+				entityType = t.name();
+			}
+		}
+
+		newContact.setImageUrl(image_url);
+		if (gender.equalsIgnoreCase("male"))
+			newContact.setGender(Gender.Male);
+		else
+			newContact.setGender(Gender.Female);
+		newContact.setFirstName(first_name);
+		newContact.setLastName(last_name);
+		newContact.setFullName(full_name);
+		newContact.setBirthDay(new Date()); // Birthday
+		newContact.setBio(bio);
+		newContact.setEntityType(entityType);
+		newContact.setStatus(0); // by default status is 0 = OFF
+		newContact.setUserId(id);
+
+		// just a check for not having duplications
+		return newContact;
+	}
+
+	private String getFriendsFromDiaspora() {
+		// TODO Auto-generated method stub
+		String params = "?user=" + getCurrentUser().getFullName() + service;
+		String requestContacts = uri + "activities/" + getActivity()
+				+ "/contacts.json" + params;
+
+		// get the response
+		MakeGetRequest request = new MakeGetRequest(this);
+		request.execute(requestContacts);
+		String response = null;
+		try {
+			response = request.get();
+
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return response;
 	}
 
 	@Override
 	protected void onNewIntent(Intent intent) {
-		super.onNewIntent(intent);
+
 		Log.i(TAG, "received a new intent, do something " + intent.getAction());
+		if (intent.getAction() != null) {
+			if (intent.getAction().equals("android.nfc.action.NDEF_DISCOVERED")) {
+				Log.d(TAG, "TAG_DISCOVERED Receiver catched it");
 
-		if (intent.getAction().equals("android.nfc.action.NDEF_DISCOVERED")) {
-			Log.d(TAG, "TAG_DISCOVERED Receiver catched it");
+				String s = NFCIntentParser.parse(intent);
+				Log.d(TAG, "NFC string parsed ONNEWINTENT " + s);
 
-			String s = NFCIntentParser.parse(intent);
-			Log.d(TAG, "NFC string parsed ONNEWINTENT " + s);
+			}
 
+			if (intent.getAction().equals(
+					"android.hardware.usb.action.USB_ACCESSORY_ATTACHED")) {
+				Log.d(TAG, "Starting? Service ADKService");
+				Intent i = new Intent(this, ADKService.class);// generate new
+
+				i.putExtras(intent);
+				startService(i);
+				Log.d(TAG, "Started Service ADKService");
+				// activityNotification.setText("ADK connected");
+			}
 		}
 
-		if (intent.getAction().equals(ADKService.SENSOR_EVENT)) {
-			Log.d(TAG, "Senso rEvent catched on new intent");
-			activityNotification.setText("Here we have a sensor intent!!");
-			handleSensorEvent(intent);
-		}
-	}
-
-	@Override
-	public void onDestroy() {
-		// TODO Auto-generated method stub
-		unregisterReceiver(br);
-
-		super.onDestroy();
-
+		// if (intent.getAction().equals(ADKService.SENSOR_EVENT)) {
+		// Log.d(TAG, "Senso rEvent catched on new intent");
+		// activityNotification.setText("Here we have a sensor intent!!");
+		// handleSensorEvent(intent);
+		// }
 	}
 
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
 		setContentView(R.layout.main);
-		initializeUI();
+		initializeButtons(R.id.homepageButton_f, R.id.friendspageButton_f,
+				R.id.offerpageButton_f, R.id.newofferButton_f);
+
 	}
 
 	/*
@@ -557,7 +659,9 @@ public class PersonalEMActivity extends Activity {
 	protected void onSaveInstanceState(Bundle outState) {
 		// TODO Auto-generated method stub
 		super.onSaveInstanceState(outState);
-		initializeUI();
+		initializeButtons(R.id.homepageButton_f, R.id.friendspageButton_f,
+				R.id.offerpageButton_f, R.id.newofferButton_f);
+
 	}
 
 	@Override
@@ -575,7 +679,8 @@ public class PersonalEMActivity extends Activity {
 		switch (item.getItemId()) {
 		case R.id.userMenu:
 			// call new activity set user name
-			startActivity(new Intent(this, SetUserActivity.class));
+			startActivityForResult(new Intent(this, SetUserActivity.class),
+					SETUSER);
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
@@ -587,6 +692,339 @@ public class PersonalEMActivity extends Activity {
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		// TODO Auto-generated method stub
 		super.onActivityResult(requestCode, resultCode, data);
+		if (requestCode == SETUSER) {
+			Bundle extras = data.getExtras();
+			if (extras == null) {
+				return;
+			}
+			Log.d(TAG, "we have extras from SetUser");
+			String user = extras.getString("name");
+			getUserFromDiaspora(user);
+		}
+	}
+
+	@Override
+	protected void onResume() {
+		// TODO Auto-generated method stub
+		super.onResume();
+
+		initializePrimaryServices();
+		Log.d(TAG, "Starting primary services");
+
+		initializeData();
+		Log.d(TAG, "Data has been initialized");
+
+		initializeButtons(R.id.homepageButton_f, R.id.friendspageButton_f,
+				R.id.offerpageButton_f, R.id.newofferButton_f);
+
+		activityNotification = (TextView) findViewById(R.id.activityNew);
+
+		Log.d(TAG, "user interface is initialized");
+
+		initializeListeners();
+
+	}
+
+	private void initializePrimaryServices() {
+
+		Intent intent = getIntent();
+
+		if (intent.getAction() == null) {
+		} else {
+			// Parse NFC
+			if (intent.getAction().equals("android.nfc.action.NDEF_DISCOVERED")) {
+				Log.d(TAG, "NFC_DISCOVERED Receiver catched it oncreate");
+
+				String s = NFCIntentParser.parse(intent);
+				Log.d(TAG, "NFC string parsed" + s);
+				activityNotification.setText("NFC string: " + s);
+
+			}
+
+			/**
+			 * start the Accessory Service we need to send all the intent that
+			 * activates this activity to the service in order for it to get the
+			 * actual information that the accessory is transmitting
+			 **/
+
+			if (intent.getAction().equals(
+					"android.hardware.usb.action.USB_ACCESSORY_ATTACHED")) {
+				Log.d(TAG, "FOUND USB in primary services, are you going?");
+				Intent i = new Intent(PersonalEMActivity.this, ADKService.class);// generate
+				// new
+
+				i.putExtras(intent);
+				startService(i);
+				Log.d(TAG, "Started Service ADKService");
+				// activityNotification.setText("ADK connected");
+			}
+
+		}
+	}
+
+	private void initializeListeners() {
+
+		statusListener = new StatusListener() {
+
+			public void onStatusChanged(GHEvent e) {
+				Log.d(TAG, "onstatuschanged triggered");
+
+				// here I already have updated the user corresponding to actor
+
+				onProfileImages(); // update the gallery with the icons
+				// representing the status of each contact
+
+				Intent home = new Intent(PersonalEMActivity.this,
+						HomeActivity.class);
+				notificationCounter = Utilities
+						.updateNotificationCounter(getContacts());
+
+				home.putExtra("actor", e.actor);
+				home.putExtra("content", e.content);
+				home.putExtra("activity", e.activity);
+				startActivity(home);
+
+				// CREATE DIALOG DISPLAYING NEW EVENT
+				// String message = activeThings + " "+
+				// getString(R.string.activeFriendsText);
+				// Utilities.createAlertDialogue(PersonalEMActivity.this,
+				// message);
+
+			}
+
+		};
+		((PersonalEMApplication) getApplication())
+				.addStatusListener(statusListener);
+	}
+
+	public class ImageAdapterCircleGallery extends BaseAdapter {
+
+		private Context mContext;
+
+		private Integer[] mImageIds;
+		private String[] mImageUrls;
+
+		public Drawable[] getmImageDrawables() {
+			return mImageDrawables;
+		}
+
+		public void setmImageDrawables(Drawable[] mImageDrawables) {
+			this.mImageDrawables = mImageDrawables;
+		}
+
+		private Drawable[] mImageDrawables;
+
+		public String[] getmImageUrls() {
+			return mImageUrls;
+		}
+
+		public void setmImageUrls(String[] mImageUrls) {
+			this.mImageUrls = mImageUrls;
+		}
+
+		public Integer[] getmImageIds() {
+			return mImageIds;
+		}
+
+		public void setmImageIds(Integer[] mImageIds) {
+			this.mImageIds = mImageIds;
+		}
+
+		public ImageAdapterCircleGallery(Context c) {
+			mContext = c;
+		}
+
+		// public ImageAdapterCircleGallery(Context c, Integer[] imgIds) {
+		// mContext = c;
+		// mImageIds=imgIds;
+		//
+		// }
+
+		public int getCount() {
+			return Integer.MAX_VALUE;
+		}
+
+		public Object getItem(int position) {
+			return getPosition(position);
+		}
+
+		public long getItemId(int position) {
+			return getPosition(position);
+		}
+
+		public View getView(int position, View convertView, ViewGroup parent) {
+
+			ImageView i = new ImageView(mContext);
+			position = getPosition(position);
+
+			i.setImageDrawable(mImageDrawables[position]);
+			i.setLayoutParams(new Gallery.LayoutParams(180, 180));
+
+			i.setScaleType(ImageView.ScaleType.FIT_XY);
+			i.setPadding(10, 10, 10, 10);
+			// i.setBackgroundColor(color);
+
+			// TextView captionNotification= new TextView(mContext);
+			// captionNotification.setText("This is user "+position);
+			// captionNotification.setTextSize(30);
+			// LinearLayout l = new LinearLayout(mContext);
+			// l.setOrientation(LinearLayout.VERTICAL);
+			// l.addView(i);
+			// l.addView(captionNotification);
+
+			RelativeLayout statusLayout = new RelativeLayout(mContext);
+			Gallery.LayoutParams statusLayoutParams = new Gallery.LayoutParams(
+					180, 180);
+			statusLayout.setLayoutParams(statusLayoutParams);
+			ImageView statusIcon = new ImageView(mContext);
+
+			if (position == 0) {
+				if (getCurrentUser().getStatus() == 1) {
+					statusIcon.setImageResource(R.drawable.star);
+				}
+			} else {
+				if (getContacts().get(position - 1).getStatus() >= 1) {
+					if (getContacts().get(position - 1).getEntityType().equals(
+							"thing"))
+						statusIcon.setImageResource(R.drawable.greenbag);
+					if (getContacts().get(position - 1).getEntityType().equals(
+							"people"))
+						statusIcon.setImageResource(R.drawable.star);
+					if (getContacts().get(position - 1).getEntityType().equals(
+							"place"))
+						statusIcon.setImageResource(R.drawable.group);
+				}
+
+				// else {
+				// statusIcon
+				// .setBackgroundColor(R.color.actionbar_background_light);
+				// }
+			}
+
+			RelativeLayout.LayoutParams iconLayoutParams = new RelativeLayout.LayoutParams(
+					200, 200);
+			iconLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+			iconLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+
+			statusIcon.setLayoutParams(iconLayoutParams);
+
+			RelativeLayout.LayoutParams contactLayoutParams = new RelativeLayout.LayoutParams(
+					LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT);
+			i.setLayoutParams(contactLayoutParams);
+			statusLayout.addView(i);
+			statusLayout.addView(statusIcon);
+			// borderImg.setPadding(10, 10, 10, 10);
+			// borderImg.setBackgroundColor(0xff00ff00);
+			// borderImg.addView(i);
+
+			// return i;
+			return statusLayout;
+		}
+
+		public int checkPosition(int position) {
+			return getPosition(position);
+		}
+
+		int getPosition(int position) {
+			if (position >= mImageDrawables.length) {
+				position = position % mImageDrawables.length;
+			}
+			return position;
+		}
+	}
+
+	public class DownloaderTask extends
+			AsyncTask<String[], Integer, Drawable[]> {
+
+		ProgressDialog dialog = null;
+
+		@Override
+		protected void onPreExecute() {
+
+			dialog = ProgressDialog.show(PersonalEMActivity.this, "",
+					"Loading. Please wait...", true);
+			dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+		}
+
+		@Override
+		protected Drawable[] doInBackground(String[]... params) {
+
+			Drawable[] files = new Drawable[params[0].length];
+			Log
+					.d(TAG + " downloaderTask", "params lenght: "
+							+ params[0].length);
+
+			for (int i = 0; i < params[0].length; i++) {
+				files[i] = ImageOperations(params[0][i], i + ".jpg");
+				Log
+						.d(TAG + " downloaderTask", "url to search: "
+								+ params[0][i]);
+			}
+
+			return files;
+		}
+
+		private Drawable ImageOperations(String url, String saveFilename) {
+			try {
+				// String url_debug
+				// ="idea.itu.dk:3000/uploads/images/thumb_large_dd368fb316ff15338281.jpg";
+				InputStream is = (InputStream) this.fetch(url);
+
+				Drawable d = Drawable.createFromStream(is, activity_dir
+						+ saveFilename);
+				is.close();
+				return d;
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+				return null;
+			} catch (IOException e) {
+				e.printStackTrace();
+				return null;
+			}
+		}
+
+		public Object fetch(String address) throws MalformedURLException,
+				IOException {
+
+			URL url = new URL(address);
+			Log.d(TAG + " downloaderTask", "fetching image from url: "
+					+ url.toString());
+			Object content = url.getContent();
+
+			//			
+			// HttpClient client = new DefaultHttpClient();
+			// HttpGet get = new
+			// HttpGet("https://lh3.googleusercontent.com/-0ENWOuHq_mY/Tw8sKhiaQII/AAAAAAAADGI/ZUa-5J7l1nc/s400/IMG_20120112_105938.jpg");
+			// Log.d(TAG,"connected test start");
+			// try {
+			// HttpResponse r = client.execute(get);
+			// r.getEntity().consumeContent();
+			// Log.d(TAG,"connected test succeded");
+			// } catch (ClientProtocolException e) {
+			// // TODO Auto-generated catch block
+			// e.printStackTrace();
+			// } catch (IOException e) {
+			// // TODO Auto-generated catch block
+			// e.printStackTrace();
+			// }
+			//
+			//			
+			return content;// url.openConnection().getInputStream();//client.execute(new
+			// HttpGet(address)).getEntity().getContent();
+		}
+
+		@Override
+		protected void onPostExecute(Drawable[] result) {
+			profile_images = result;
+			onProfileImages();
+			dialog.dismiss();
+		}
+
+		@Override
+		protected void onProgressUpdate(Integer... values) {
+
+		}
+
 	}
 
 }
