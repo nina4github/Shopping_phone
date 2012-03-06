@@ -4,32 +4,32 @@
     <string name="app_name">SHOPPING FRIENDS</string>
     <string name="activityText">Is there a new activity?</string>
     <string name="activityNewText">Activity Initialized</string>
-    <string name="shareText">I just found this offer, check it out!</string>
-    <string name="labelmessage">#</string>
+    <string name="shareText">Et godt tilbud</string>
+    <string name="labelmessage">testingthis#</string>
     <string name="offerTitle">Tilbud</string>
     <string name="userMenu">AddUser</string>
     <string name="save">save</string>
     <string name="cancel">cancel</string>
-    <string name="adduserText">Add user account name</string>
+    <string name="adduserText">Tilføj ny bruger</string>
     <string name="setUser_name">Set User Preference panel</string>
     <string name="groupFriends">Venner</string>
     <string name="activity">shopping</string>
     <string name="okButton">Tak!</string>
-    <string name="activeFriendsText"> venner er aktive</string>
+    <string name="activeFriendsText">Aktive venner</string>
     <string name="sharedEventMessageText">aksjer</string>
     <string name="homeTitle">Hjem</string>
-    <string name="offline"> went offline </string>
+    <string name="offline">Er gået offline </string>
     <string name="online"> is active now</string>
     <string name="activeNumber">#</string>
-    <string name="activeMessage">venner pa indkob</string>
+    <string name="activeMessage">Venner på indkøb</string>
     <string name="newEventMessageString"></string>
     
-        <string name="newSparkMessage"> has just shared a new offer </string>
-        <string name="newLocationEnterMessage"> has just entered </string>
-     <string name="newLocationExitMessage"> has just left </string>
-     <string name="newActivityDataMessage"> has been out shopping for </string>
-     <string name="newActivityStartMessage"> is out shopping </string>
-     <string name="newActivityStopMessage"> finished shopping </string>
+        <string name="newSparkMessage"> har fundet et godt tilbud</string>
+        <string name="newLocationEnterMessage"> er ankommet til </string>
+     <string name="newLocationExitMessage"> er gået fra </string>
+     <string name="newActivityDataMessage"> har købt ind til </string>
+     <string name="newActivityStartMessage"> er ude og shoppe </string>
+     <string name="newActivityStopMessage"> er færdig med at shoppe </string>
      
         
 </resources>

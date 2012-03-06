@@ -65,7 +65,7 @@
             android:layout_margin="2.5dp"
             android:background="@color/trans"
             android:scaleType="fitXY"
-            android:src="@drawable/venner" />
+            android:src="@drawable/group" />
 
         <ImageButton
             android:id="@+id/offerpageButton_o"
@@ -74,7 +74,7 @@
             android:layout_margin="2.5dp"
             android:background="@color/trans"
             android:scaleType="fitXY"
-            android:src="@drawable/tilbut" />
+            android:src="@drawable/tilbud" />
 
         <ImageButton
             android:id="@+id/newofferButton_o"
@@ -83,7 +83,7 @@
             android:layout_margin="2.5dp"
             android:background="@color/trans"
             android:scaleType="fitXY"
-            android:src="@drawable/nye" />
+            android:src="@drawable/camera" />
     </LinearLayout>
 
 </LinearLayout>

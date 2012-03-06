@@ -24,4 +24,5 @@
     <color name="myred">#B8002E</color>
     <color name="myviolet">#8A00B8</color>
     <color name="trans">#00000000</color>
+    <color name="mywhite">#FFFFFF</color>
 </resources>
