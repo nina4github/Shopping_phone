@@ -110,8 +110,7 @@ public class PersonalEMActivity extends BaseActivity {
 		initializePrimaryServices();
 		Log.d(TAG, "Starting primary services");
 
-		initializeData();
-		Log.d(TAG, "Data has been initialized");
+		
 	}
 
 	private void initializeGallery() {
@@ -300,13 +299,15 @@ public class PersonalEMActivity extends BaseActivity {
 		// TODO Auto-generated method stub
 		SharedPreferences preferences = getSharedPreferences(CONFIG_USER, 0);
 
-		if (preferences.contains("user")) {
-			getUserFromDiaspora(preferences.getString("user", "user01"));
-		} else if (getCurrentUser() == null) {
-			startActivityForResult(new Intent(this, SetUserActivity.class),
-					SETUSER);
-		} else {
+		if (getCurrentUser() != null) {
 			onCurrentUser();
+		} else {
+			if (preferences.contains("user")) {
+				getUserFromDiaspora(preferences.getString("user", "user01"));
+			} else if (getCurrentUser() == null) {
+				startActivityForResult(new Intent(this, SetUserActivity.class),
+						SETUSER);
+			}
 		}
 
 	}
@@ -318,14 +319,15 @@ public class PersonalEMActivity extends BaseActivity {
 		if (getContacts() == null || getContacts().isEmpty()) {
 			setFriends();
 		} else {
-
 			onFriends();
 		}
 
 	}
 
 	private void onFriends() {
+		
 		initializeUsersStatus();
+		
 		Log.d(TAG, "contacts number " + getContacts().size());
 		notificationCounter = Utilities
 				.updateNotificationCounter(getContacts());
@@ -345,7 +347,6 @@ public class PersonalEMActivity extends BaseActivity {
 			entities.add(getCurrentUser());
 			Utilities.updateActiveEntities(stream_dir, "stream.txt", entities);
 
-			return;
 		} else {
 			updateFriendsStatus();
 		}
@@ -716,9 +717,13 @@ public class PersonalEMActivity extends BaseActivity {
 		Log.d(TAG, "onResume is executed");
 		super.onResume();
 
+		
 		initializeButtons(R.id.homepageButton_f, R.id.friendspageButton_f,
 				R.id.offerpageButton_f, R.id.newofferButton_f);
 
+		initializeData();
+		Log.d(TAG, "Data has been initialized");
+		
 		activityNotification = (TextView) findViewById(R.id.activityNew);
 
 		initializeListeners();
@@ -955,9 +960,7 @@ public class PersonalEMActivity extends BaseActivity {
 				}
 				files[i] = ImageOperations(params[0][i], user.getFirstName()
 						+ ".jpg");
-				Log
-						.d(TAG + " downloaderTask", "url to search: "
-								+ params[0][i]);
+
 			}
 
 			return files;
@@ -972,6 +975,8 @@ public class PersonalEMActivity extends BaseActivity {
 			InputStream is = null;
 			try {
 				if (!f.exists()) {
+					Log.d(TAG + " downloaderTask",
+							"NO such file, url to search: " + url);
 					is = (InputStream) this.fetch(url);
 
 					// save image to filename
@@ -980,6 +985,8 @@ public class PersonalEMActivity extends BaseActivity {
 					out.close();
 
 				} else {
+					Log.d(TAG + " downloaderTask", "Profile image found for: "
+							+ url);
 					is = new FileInputStream(new File(filename));
 				}
 				Drawable d = Drawable.createFromStream(is, profiles_dir
@@ -1054,8 +1061,10 @@ public class PersonalEMActivity extends BaseActivity {
 
 	@Override
 	protected void offerUploaded() {
-		getCurrentUser().setStatus(1);
+		getCurrentUser().setStatus(getCurrentUser().getStatus()+1);
+		
 		Log.d(TAG, "offerUploaded");
+		onResume();
 	}
 
 }

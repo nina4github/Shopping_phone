@@ -297,6 +297,10 @@ public class Utilities {
 	public static void updateActiveEntities(File dir, String filename,
 			ArrayList<User> entities) {
 
+		for(User u : entities){
+			u.setStatus(0);
+		}
+		
 		StringBuffer fileData = Utilities.readStringFromFile(dir, filename);
 		JSONObject jObj = null;
 		try {

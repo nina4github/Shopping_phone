@@ -61,12 +61,12 @@ public class OffersActivity extends BaseActivity {
 
 	private void initializeData() {
 
-		notificationCounter = Utilities
-				.updateNotificationCounter(getContacts());
+		
 
-		if (!isUpdated()) {
+		if (isUpdated()) {
+			
 			if (shoppingoffers.isEmpty())
-				createOffersFromFile();
+				createOffersFromFile(); // it will return to initialize gallery
 			else
 				initializeGallery();
 		} else
@@ -74,7 +74,9 @@ public class OffersActivity extends BaseActivity {
 	}
 
 	private void initializeGallery() {
-
+		notificationCounter = Utilities
+		.updateNotificationCounter(getContacts());
+		
 		offers_gallery = (Gallery) findViewById(R.id.galleryOffers);
 		// image_selected = (ImageView) findViewById(R.id.imageSelected);
 
@@ -244,7 +246,7 @@ public class OffersActivity extends BaseActivity {
 		Utilities.saveResponseToFile(response, "offers.txt", offers_dir);
 
 		createOffersFromFile();
-		initializeGallery();
+		//initializeGallery();
 	}
 
 	/*
