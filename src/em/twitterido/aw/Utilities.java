@@ -342,6 +342,11 @@ public class Utilities {
 								// message
 								actor.setStatus(status);
 								// and update the counter :)
+								Log.d(TAG, "updated status of actor "
+										+ actor.getUserId() + " named "
+										+ actor.getFullName() + " to "
+										+ actor.getStatus() + " for post n. "
+										+ jsonObject.getString("id"));
 
 							} else if (actor.getEntityType().equalsIgnoreCase(
 									"place")) {
@@ -357,7 +362,11 @@ public class Utilities {
 								// update the status of the actor who posted
 								// this
 								// message
-
+								Log.d(TAG, "updated status of actor "
+										+ actor.getUserId() + " named "
+										+ actor.getFullName() + " to "
+										+ actor.getStatus() + " for post n. "
+										+ jsonObject.getString("id"));
 							}// end type check
 
 						} else if (jsonObject.getString("verb").equals("Photo")) {
@@ -365,17 +374,17 @@ public class Utilities {
 									.equalsIgnoreCase("person"))
 								actor.setStatus(actor.getStatus() + 1);
 
+							Log.d(TAG, "updated status of actor "
+									+ actor.getUserId() + " named "
+									+ actor.getFullName() + " to "
+									+ actor.getStatus() + " for post n. "
+									+ jsonObject.getString("id"));
 						}// end check verbs
 
-						Log.d(TAG, "updated status of actor "
-								+ actor.getUserId() + " named "
-								+ actor.getFullName() + " to "
-								+ actor.getStatus() + " for post n. "+jsonObject.getString("id"));
-						
 						break; // exit when you have found the user of this post
-								// and continue to the next post
+						// and continue to the next post
 					}// end user found
-				
+
 				}// end for to iterate on users
 
 			}// end for to iterate on posts

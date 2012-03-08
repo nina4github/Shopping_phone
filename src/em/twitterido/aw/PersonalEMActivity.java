@@ -106,6 +106,12 @@ public class PersonalEMActivity extends BaseActivity {
 	@Override
 	public void doOnCreate() {
 		setContentView(R.layout.main);
+
+		initializePrimaryServices();
+		Log.d(TAG, "Starting primary services");
+
+		initializeData();
+		Log.d(TAG, "Data has been initialized");
 	}
 
 	private void initializeGallery() {
@@ -312,18 +318,17 @@ public class PersonalEMActivity extends BaseActivity {
 		if (getContacts() == null || getContacts().isEmpty()) {
 			setFriends();
 		} else {
+
 			onFriends();
 		}
 
 	}
 
 	private void onFriends() {
-
+		initializeUsersStatus();
 		Log.d(TAG, "contacts number " + getContacts().size());
 		notificationCounter = Utilities
 				.updateNotificationCounter(getContacts());
-
-		initializeUsersStatus();
 
 		initializeGallery();
 		Log.d(TAG, "Gallery is set");
@@ -334,6 +339,12 @@ public class PersonalEMActivity extends BaseActivity {
 
 	private void initializeUsersStatus() {
 		if (isFriendsStatusUpdated()) {
+
+			ArrayList<User> entities = new ArrayList<User>();
+			entities.addAll(getContacts());
+			entities.add(getCurrentUser());
+			Utilities.updateActiveEntities(stream_dir, "stream.txt", entities);
+
 			return;
 		} else {
 			updateFriendsStatus();
@@ -344,17 +355,18 @@ public class PersonalEMActivity extends BaseActivity {
 	private void updateFriendsStatus() {
 		String response = getTodayStreamFromDiaspora();
 		Utilities.saveResponseToFile(response, "stream.txt", stream_dir);
+
 		ArrayList<User> entities = new ArrayList<User>();
 		entities.add(getCurrentUser());
 		entities.addAll(getContacts());
-		
 		Utilities.updateActiveEntities(stream_dir, "stream.txt", entities);
-////		Utilities.updateActiveThings(stream_dir, "stream.txt",
-//				getContacts()); // this will update contacts :)
-		
-//		Utilities.updateActiveUsers(stream_dir, "stream.txt", entities);
-//		Utilities.updateActivePlaces(stream_dir, "stream.txt", getContacts());
-		
+		// // Utilities.updateActiveThings(stream_dir, "stream.txt",
+		// getContacts()); // this will update contacts :)
+
+		// Utilities.updateActiveUsers(stream_dir, "stream.txt", entities);
+		// Utilities.updateActivePlaces(stream_dir, "stream.txt",
+		// getContacts());
+
 	}
 
 	private boolean isFriendsStatusUpdated() {
@@ -701,21 +713,13 @@ public class PersonalEMActivity extends BaseActivity {
 
 	@Override
 	protected void onResume() {
-		// TODO Auto-generated method stub
+		Log.d(TAG, "onResume is executed");
 		super.onResume();
-
-		initializePrimaryServices();
-		Log.d(TAG, "Starting primary services");
-
-		initializeData();
-		Log.d(TAG, "Data has been initialized");
 
 		initializeButtons(R.id.homepageButton_f, R.id.friendspageButton_f,
 				R.id.offerpageButton_f, R.id.newofferButton_f);
 
 		activityNotification = (TextView) findViewById(R.id.activityNew);
-
-		Log.d(TAG, "user interface is initialized");
 
 		initializeListeners();
 
@@ -858,7 +862,6 @@ public class PersonalEMActivity extends BaseActivity {
 
 			i.setScaleType(ImageView.ScaleType.FIT_XY);
 			i.setPadding(10, 10, 10, 10);
-		
 
 			RelativeLayout statusLayout = new RelativeLayout(mContext);
 			Gallery.LayoutParams statusLayoutParams = new Gallery.LayoutParams(
@@ -867,21 +870,20 @@ public class PersonalEMActivity extends BaseActivity {
 			ImageView statusIcon = new ImageView(mContext);
 
 			if (position == 0) {
-				Log.d(TAG, "current user status is: "+getCurrentUser().getStatus());
-				if (getCurrentUser().getStatus() == 1) {
+				Log.d(TAG, "current user status is: "
+						+ getCurrentUser().getStatus());
+				if (getCurrentUser().getStatus() >= 1) {
 					statusIcon.setImageResource(R.drawable.star);
 				}
 			} else {
-				Log.d(TAG, "user status is: "+getContacts().get(position-1).getStatus());
-				if (getContacts().get(position - 1).getStatus() >= 1) {
-					if (getContacts().get(position - 1).getEntityType().equals(
-							"thing"))
+				User actor = getContacts().get(position - 1);
+				Log.d(TAG, "user status is: " + actor.getStatus());
+				if (actor.getStatus() >= 1) {
+					if (actor.getEntityType().equals("thing"))
 						statusIcon.setImageResource(R.drawable.greenbag);
-					if (getContacts().get(position - 1).getEntityType().equals(
-							"people"))
+					if (actor.getEntityType().equals("person"))
 						statusIcon.setImageResource(R.drawable.star);
-					if (getContacts().get(position - 1).getEntityType().equals(
-							"place"))
+					if (actor.getEntityType().equals("place"))
 						statusIcon.setImageResource(R.drawable.group);
 				}
 
@@ -1048,6 +1050,12 @@ public class PersonalEMActivity extends BaseActivity {
 
 		}
 
+	}
+
+	@Override
+	protected void offerUploaded() {
+		getCurrentUser().setStatus(1);
+		Log.d(TAG, "offerUploaded");
 	}
 
 }
