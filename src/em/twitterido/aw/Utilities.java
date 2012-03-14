@@ -17,7 +17,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -30,8 +29,9 @@ import android.util.Log;
 public class Utilities {
 
 	public static String TAG = "Utilities";
-	public static final int IMG_MAXSIZE = 300;
-	public static final long[] EVENTVIBRATEPATTERN = { 500, 400, 300, 0, 400, 300, 200, 0, 300, 200, 100, 0 }; // GRADUALLY FADING ?
+	public static final int IMG_MAXSIZE = 400;
+	public static final long[] EVENTVIBRATEPATTERN = { 500, 400, 300, 0, 400,
+			300, 200, 0, 300, 200, 100, 0 }; // GRADUALLY FADING ?
 	public static final long[] UPDATEVIBRATEPATTERN = { 300, 0, 200, 0, 100, 0 };;
 
 	public static void vibrate(Context activity, long[] pattern) {
@@ -156,7 +156,9 @@ public class Utilities {
 						// add
 						// currentUser.getUserId() ==id ||
 						// to the following if statement
-						if ((actor.getUserId() == id) && actor.getEntityType().equalsIgnoreCase("thing")) {
+						if ((actor.getUserId() == id)
+								&& actor.getEntityType().equalsIgnoreCase(
+										"thing")) {
 							String content = jsonObject.getJSONObject("object")
 									.getString("content");
 							int status = content.contains("start") ? 1 : 0;
@@ -283,13 +285,117 @@ public class Utilities {
 	}
 
 	public static User getContactById(int actor, ArrayList<User> c) {
-		
+
 		for (User user : c) {
-			if (user.getUserId()==(actor)) {
+			if (user.getUserId() == (actor)) {
 				return user;
 			}
 		}
 		return null;
 	}
 
+	public static void updateActiveEntities(File dir, String filename,
+			ArrayList<User> entities) {
+
+		for(User u : entities){
+			u.setStatus(0);
+		}
+		
+		StringBuffer fileData = Utilities.readStringFromFile(dir, filename);
+		JSONObject jObj = null;
+		try {
+			jObj = new JSONObject(fileData.toString());
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		try {
+
+			JSONArray jsonArray = jObj.getJSONArray("stream");
+
+			for (int i = 0; i < jsonArray.length(); i++) {
+
+				// get the object
+				JSONObject jsonObject = jsonArray.getJSONObject(i);
+				// take only if the verb is statusmessage (we want to check
+				// for start and stop
+
+				Log.d(TAG, "scanning post n. " + jsonObject.getInt("id"));
+				int id = jsonObject.getJSONObject("actor").getInt("id");
+
+				// get the user with id = id
+				// take only the actors who are things
+				for (int j = 0; j < entities.size(); j++) {
+					User actor = (User) entities.get(j);
+					// it will never be the user. but in case you can always
+					// add
+					// currentUser.getUserId() ==id ||
+					// to the following if statement
+					if ((actor.getUserId() == id)) {
+						if (jsonObject.getString("verb")
+								.equals("StatusMessage")) {
+							// handle THINGS
+							if (actor.getEntityType().equalsIgnoreCase("thing")) {
+
+								String content = jsonObject.getJSONObject(
+										"object").getString("content");
+								int status = content.contains("start") ? 1 : 0;
+								// update the status of the actor who posted
+								// this
+								// message
+								actor.setStatus(status);
+								// and update the counter :)
+								Log.d(TAG, "updated status of actor "
+										+ actor.getUserId() + " named "
+										+ actor.getFullName() + " to "
+										+ actor.getStatus() + " for post n. "
+										+ jsonObject.getString("id"));
+
+							} else if (actor.getEntityType().equalsIgnoreCase(
+									"place")) {
+								String content = jsonObject.getJSONObject(
+										"object").getString("content");
+
+								if (content.contains("enter"))
+									actor.setStatus(actor.getStatus() + 1);
+
+								if (content.contains("leave"))
+									actor.setStatus(actor.getStatus() == 0 ? 0
+											: actor.getStatus() - 1);
+								// update the status of the actor who posted
+								// this
+								// message
+								Log.d(TAG, "updated status of actor "
+										+ actor.getUserId() + " named "
+										+ actor.getFullName() + " to "
+										+ actor.getStatus() + " for post n. "
+										+ jsonObject.getString("id"));
+							}// end type check
+
+						} else if (jsonObject.getString("verb").equals("Photo")) {
+							if (actor.getEntityType()
+									.equalsIgnoreCase("person"))
+								actor.setStatus(actor.getStatus() + 1);
+
+							Log.d(TAG, "updated status of actor "
+									+ actor.getUserId() + " named "
+									+ actor.getFullName() + " to "
+									+ actor.getStatus() + " for post n. "
+									+ jsonObject.getString("id"));
+						}// end check verbs
+
+						break; // exit when you have found the user of this post
+						// and continue to the next post
+					}// end user found
+
+				}// end for to iterate on users
+
+			}// end for to iterate on posts
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
 }

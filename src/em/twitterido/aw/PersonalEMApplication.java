@@ -10,7 +10,6 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 
-
 public class PersonalEMApplication extends Application {
 
 	public final String TAG = this.getClass().getSimpleName();
@@ -60,15 +59,15 @@ public class PersonalEMApplication extends Application {
 	 * method called when a new GHEVENT_INTENT has been filtered
 	 */
 	protected void handleGHEvent(Intent intent) {
-		
+
 		// retrieve event data
 		Bundle extras = intent.getExtras();
 		if (extras == null) {
 			return;
 		}
 		// TODO this is an example of vibration for NEW EVENTs
-		Utilities.vibrate(this,Utilities.EVENTVIBRATEPATTERN); 
-		
+		Utilities.vibrate(this, Utilities.EVENTVIBRATEPATTERN);
+
 		User actor = null;
 		Log.d(TAG, "GH Event, intent extras");
 		for (User user : contacts) {
@@ -79,19 +78,18 @@ public class PersonalEMApplication extends Application {
 		}
 		int status = 0;
 		String data = "";
-		if (extras.getString("content") != null) {
+		String content = extras.getString("content");
+		if (content != null & actor != null) {
 
-			if (extras.getString("content").contains("start")) {
-				status = 1;
-				// notificationCounter.put(extras.getString("actor"), status);
+			if (content.contains("start"))
+				status = 1;			
 
-			} else if (extras.getString("content").contains("stop")) {
+			else if (content.contains("stop"))
 				status = 0;
-				// notificationCounter.put(extras.getString("actor"), status);
 
-			} else if (extras.getString("content").contains("data")) {
+			else if (content.contains("data")) {
 				status = 0; // assumed the message is fired when I have stopped.
-				data = extras.getString("content").split(":")[1]; // assumed the
+				data = content.split(":")[1]; // assumed the
 				// format of
 				// the
 				// content
@@ -100,20 +98,26 @@ public class PersonalEMApplication extends Application {
 				// message = extras.getString("actor")
 				// + getString(R.string.shareText)
 				// + extras.getString("content");
-			}
-			if (actor != null) {
-				actor.setStatus(status); // this is updating our user status
-				// here handle the event in the specific activity
+			} else if (content.contains("enter"))
+				status = (actor.getStatus() + 1);
 
-				GHEvent gh = new GHEvent();
-				gh.setActivity(extras.getString("activity"));
-				gh.setActor(actor);
-				gh.setContent(extras.getString("content"));
-				gh.setData(data);
+			else if (content.contains("leave"))
+				status = (actor.getStatus() == 0 ? 0 : actor.getStatus() - 1);
 
-				fireStatusEvent(gh);
-				
-			}
+			else if (content.contains("photo"))
+				status = (actor.getStatus() + 1);
+
+			actor.setStatus(status); // this is updating our user status
+			// here handle the event in the specific activity
+
+			GHEvent gh = new GHEvent();
+			gh.setActivity(extras.getString("activity"));
+			gh.setActor(actor);
+			gh.setContent(extras.getString("content"));
+			gh.setData(data);
+
+			fireStatusEvent(gh);
+
 		}
 
 	}

@@ -36,6 +36,7 @@ import android.widget.Gallery;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.AdapterView.OnItemSelectedListener;
 import em.twitterido.aw.PersonalEMApplication.StatusListener;
 
@@ -60,13 +61,22 @@ public class OffersActivity extends BaseActivity {
 
 	private void initializeData() {
 
-		notificationCounter = Utilities
-				.updateNotificationCounter(getContacts());
-		updateOffers();
+		
+
+		if (isUpdated()) {
+			
+			if (shoppingoffers.isEmpty())
+				createOffersFromFile(); // it will return to initialize gallery
+			else
+				initializeGallery();
+		} else
+			updateOffers();
 	}
 
 	private void initializeGallery() {
-
+		notificationCounter = Utilities
+		.updateNotificationCounter(getContacts());
+		
 		offers_gallery = (Gallery) findViewById(R.id.galleryOffers);
 		// image_selected = (ImageView) findViewById(R.id.imageSelected);
 
@@ -79,17 +89,18 @@ public class OffersActivity extends BaseActivity {
 		int i = 0;
 		for (Offer offer : shoppingoffers) {
 			offers_images[i] = offer.getImageFile();
-			Log.d(TAG, "offers_image " + i + offers_images[i].toString());
+			//Log.d(TAG, "offers_image " + i + offers_images[i].toString());
 			i = i + 1;
 		}
 		// }
 
-		Log.d(TAG, "shopping offers: " + shoppingoffers.size());
-		Log.d(TAG, "offers images drawables: " + offers_images.length);
+//		Log.d(TAG, "shopping offers: " + shoppingoffers.size());
+//		Log.d(TAG, "offers images drawables: " + offers_images.length);
 
 		galleryAdapter.setmImageDrawables(offers_images);
-		Log.d(TAG, "gallery drawables: "
-				+ galleryAdapter.getmImageDrawables().length);
+
+//		Log.d(TAG, "gallery drawables: "
+//				+ galleryAdapter.getmImageDrawables().length);
 		offers_gallery.setAdapter(galleryAdapter);
 		galleryAdapter.notifyDataSetChanged();
 
@@ -103,10 +114,11 @@ public class OffersActivity extends BaseActivity {
 				TextView message = (TextView) findViewById(R.id.captionOffersText);
 				User user = shoppingoffers.get(position).getSharedByUser();
 				String username = user.getFullName();
-				String text = "shared by: " + username + " on "+ shoppingoffers.get(position).getPublished();
-				
+				String text = "shared by: " + username + " on "
+						+ shoppingoffers.get(position).getPublished();
+
 				message.setText(text);
-				message.setTextColor(R.color.mygreen);
+				//message.setTextColor(R.color.mygreen);
 
 			}
 
@@ -116,6 +128,20 @@ public class OffersActivity extends BaseActivity {
 			}
 		});
 
+		offers_gallery
+				.setOnItemLongClickListener(new OnItemLongClickListener() {
+
+					public boolean onItemLongClick(AdapterView<?> arg0,
+							View arg1, int arg2, long arg3) {
+
+						// TODO
+						// load full image and enable gestures to expand
+
+						return false;
+					}
+
+				});
+
 	}
 
 	private boolean isUpdated() {
@@ -124,101 +150,116 @@ public class OffersActivity extends BaseActivity {
 
 		if (!(new File(offers_dir, "offers.txt").exists())) {
 			Log.d(TAG, "offers.txt does not exist, therefore is not updated");
-			return false; // exit
-		}
-
-		String lastoffers = getOffersFromDiaspora();
-		// chech if last offers == offers.txt
-		// if equal do nothing
-		// if updated check latest photo id
-		// if latest photo id > max shoppingoffers_id
-		// save new offers.txt, download all the new photos and update
-		// shopping
-		// offer,
-		// else do nothing
-		StringBuffer fileData = Utilities.readStringFromFile(offers_dir,
-				"offers.txt");
-
-		if (!fileData.toString().equalsIgnoreCase(lastoffers)) {
-
-			Log.d(TAG, "new updates are available");
-
-			// JSONObject jObj = null;
-			// try {
-			// jObj = new JSONObject(fileData.toString());
-			// } catch (JSONException e) {
-			// // TODO Auto-generated catch block
-			// e.printStackTrace();
-			// }
-
-			// Integer[] shopping_offers_ids = new
-			// Integer[shoppingoffers.size()];
-			// ArrayList<Integer> ids = new ArrayList<Integer>();
-			// int max_id = 0;
-			// for (int i = 0; i < shoppingoffers.size(); i++) {
-			// // shopping_offers_ids[i] = shoppingoffers.get(i).getId();
-			// // ids.add(shoppingoffers.get(i).getId());
-			// int current_id = shoppingoffers.get(i).getId();
-			// max_id = (max_id > current_id) ? max_id : current_id;
-			// Log.d(TAG, "max id of current offers is :" + max_id);
-			// }
-
-			/**
-			 * Check in JSONArray for new photos.
-			 */
-
-			// JSONArray jsonArray;
-			// try {
-			// jsonArray = jObj.getJSONArray("stream");
-			//
-			// for (int i = 0; i < jsonArray.length(); i++) {
-			// JSONObject jsonObject = jsonArray.getJSONObject(i);
-			//
-			// if (jsonObject.getString("verb").equals("Photo")) {
-			// int id = jsonObject.getInt("id");
-			// if (id > max_id) {
-			// Log.d(TAG, "we have a photo that is more recent");
-			// // 1. redo everything
-			// // 2. check what is already there and update
-			// // easier solution => redo everything :P
-			// resetOffers(lastoffers);
-			// break;
-			// }
-			// }
-			// }
-			// } catch (JSONException e) {
-			// // TODO Auto-generated catch block
-			// e.printStackTrace();
-			// }
 			return false;
+		} else {
+
+			String lastoffers = getOffersFromDiaspora();
+			// chech if last offers == offers.txt
+			// if equal do nothing
+			// if updated check latest photo id
+			// if latest photo id > max shoppingoffers_id
+			// save new offers.txt, download all the new photos and update
+			// shopping offer,
+			// else do nothing
+			StringBuffer fileData = Utilities.readStringFromFile(offers_dir,
+					"offers.txt");
+
+			if (!fileData.toString().equalsIgnoreCase(lastoffers)) {
+
+				Log.d(TAG, "new updates are available");
+
+				// checkOfferUpdates(fileData.toString());
+				// simply return false because there might be new offers :P
+				// TODO check now if the new elements are offers, only in this
+				// case
+				// it is worth reloading
+				return false;
+			}
+
+			Log.d(TAG,
+					"the data is the same so the situation is already updated");
+			return true;
 		}
-		Log.d(TAG, "the situation is already updated");
-		return true;
 	}
+
+	// private void checkOfferUpdates(String data) {
+	// JSONObject jObj = null;
+	// try {
+	// jObj = new JSONObject(fileData.toString());
+	// } catch (JSONException e) {
+	// // TODO Auto-generated catch block
+	// e.printStackTrace();
+	// }
+
+	// Integer[] shopping_offers_ids = new
+	// Integer[shoppingoffers.size()];
+	// ArrayList<Integer> ids = new ArrayList<Integer>();
+	// int max_id = 0;
+	// for (int i = 0; i < shoppingoffers.size(); i++) {
+	// // shopping_offers_ids[i] = shoppingoffers.get(i).getId();
+	// // ids.add(shoppingoffers.get(i).getId());
+	// int current_id = shoppingoffers.get(i).getId();
+	// max_id = (max_id > current_id) ? max_id : current_id;
+	// Log.d(TAG, "max id of current offers is :" + max_id);
+	// }
+
+	/**
+	 * Check in JSONArray for new photos.
+	 */
+
+	// JSONArray jsonArray;
+	// try {
+	// jsonArray = jObj.getJSONArray("stream");
+	//
+	// for (int i = 0; i < jsonArray.length(); i++) {
+	// JSONObject jsonObject = jsonArray.getJSONObject(i);
+	//
+	// if (jsonObject.getString("verb").equals("Photo")) {
+	// int id = jsonObject.getInt("id");
+	// if (id > max_id) {
+	// Log.d(TAG, "we have a photo that is more recent");
+	// // 1. redo everything
+	// // 2. check what is already there and update
+	// // easier solution => redo everything :P
+	// resetOffers(lastoffers);
+	// break;
+	// }
+	// }
+	// }
+	// } catch (JSONException e) {
+	// // TODO Auto-generated catch block
+	// e.printStackTrace();
+	// }
+	// }
 
 	private void updateOffers() {
-		if (isUpdated()) {
-			if (shoppingoffers.isEmpty())
-				createOffersFromFile();
-			else
-				initializeGallery();
-		} else {
-			Utilities.vibrate(OffersActivity.this,
-					Utilities.UPDATEVIBRATEPATTERN);
-			shoppingoffers.clear();
-			Log.d(TAG, "shopping offers size after clear: "
-					+ shoppingoffers.size());
-			// build the string request to TwitterIDoServer Diaspora Client API
-			String response = getOffersFromDiaspora();
-			Utilities.saveResponseToFile(response, "offers.txt", offers_dir);
-			createOffersFromFile();
-		}
+		Log.d(TAG, "updateOffers");
+		// Utilities.vibrate(OffersActivity.this,
+		// Utilities.UPDATEVIBRATEPATTERN);
+		shoppingoffers.clear();
+
+		// retrieve the offers from twitterIDo client
+		// save them in offers.txt
+		// createOffersFrom that file and store them in shoppingoffers (that is
+		// a shared resource)
+		String response = getOffersFromDiaspora();
+		Utilities.saveResponseToFile(response, "offers.txt", offers_dir);
+
+		createOffersFromFile();
+		//initializeGallery();
 	}
 
+	/*
+	 * function to parse the JSON stream saved in offers.txt and build the array
+	 * list of shopping offers the parsing is delegated to an Async task,
+	 * MakeOffersTask, because it might involve the download of the picture when
+	 * a new one is retrieved
+	 */
 	private void createOffersFromFile() {
 
 		StringBuffer fileData = Utilities.readStringFromFile(offers_dir,
 				"offers.txt");
+
 		JSONObject jObj = null;
 		try {
 			jObj = new JSONObject(fileData.toString());
@@ -231,7 +272,7 @@ public class OffersActivity extends BaseActivity {
 
 			JSONObject jsonObject = jObj.getJSONObject("stream");
 
-			Log.d(TAG, "this is the string array: " + jsonObject.toString());
+			//Log.d(TAG, "this is the string array: " + jsonObject.toString());
 			MakeOffersTask makeOffersTask = new MakeOffersTask();
 			makeOffersTask.execute(jsonObject);
 
@@ -331,8 +372,8 @@ public class OffersActivity extends BaseActivity {
 
 		public View getView(int position, View convertView, ViewGroup parent) {
 
-			Log.d(TAG, "drawing offer # " + position + " of "
-					+ mImageDrawables.length);
+//			Log.d(TAG, "drawing offer # " + position + " of "
+//					+ mImageDrawables.length);
 			ImageView i = new ImageView(mContext);
 			// position = getPosition(position);
 
@@ -384,9 +425,6 @@ public class OffersActivity extends BaseActivity {
 		initializeButtons(R.id.homepageButton_o, R.id.friendspageButton_o,
 				R.id.offerpageButton_o, R.id.newofferButton_o);
 		Log.d(TAG, "user interface is initialized");
-
-		
-		
 
 		initializeData();
 		Log.d(TAG, "data has been initialized");
@@ -462,10 +500,14 @@ public class OffersActivity extends BaseActivity {
 			Drawable bitmap = null;
 
 			// first if the file is not there, download the image from the url
-			// then put it into a file (yes, I want to cache the files)
+			// then put it into a file (yes, I want to save the files)
+			//
 			// second create a drawable from the image file saved on the phone
 			// here we assume that the name of the offer will be saved with
 			// username_offer_offerid in the offers directory
+			//
+			// if the file already exists
+
 			try {
 				if (!f.exists()) {
 					InputStream is = (InputStream) this.fetch(url);
@@ -482,6 +524,7 @@ public class OffersActivity extends BaseActivity {
 
 						FileOutputStream outTabnail = new FileOutputStream(
 								filename_tab);
+						// 100 means compress for high quality
 						scaled.compress(Bitmap.CompressFormat.JPEG, 100,
 								outTabnail);
 
@@ -568,9 +611,6 @@ public class OffersActivity extends BaseActivity {
 				}
 			}
 
-			Log.d(TAG, "this photo has been shared by user :"
-					+ Integer.parseInt(actor));
-
 			return newOffer;
 		}
 
@@ -591,13 +631,12 @@ public class OffersActivity extends BaseActivity {
 						if (jsonObject.getString("verb").equals("Photo")) {
 							shoppingoffers.add(setNewOffer(jsonObject));
 						}
-						
+
 					}
-					
 
 				}
 				Collections.sort(shoppingoffers, new OfferComparator());
-				
+
 				// if (jsonObject.getString("verb").equals("Photo")) {
 				// shoppingoffers.add(setNewOffer(jsonObject));
 				// }
@@ -617,10 +656,8 @@ public class OffersActivity extends BaseActivity {
 	}
 
 	protected void offerUploaded() {
-		shoppingoffers.clear();
-		Log.d(TAG, "new shopping offers: " + shoppingoffers.size());
-		updateOffers();
-		Log.d(TAG, "new shopping offers: " + shoppingoffers.size());
+		Log.d(TAG, "launching updateOffers after picture update");
+		updateOffers(); // re load the offers and re draw the gallery
 	}
 
 }

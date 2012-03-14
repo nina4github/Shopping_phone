@@ -38,7 +38,6 @@ public abstract class BaseActivity extends Activity {
 
 	protected Uri imageUri;
 	public static final int CAMERA_PIC_REQUEST = 2;
-	
 
 	protected static final String uri = "http://idea.itu.dk:8080/";
 	protected static final String service = "@idea.itu.dk:3000";
@@ -51,19 +50,21 @@ public abstract class BaseActivity extends Activity {
 			.getExternalStorageDirectory(), "EM/shopping/stream/");
 	public static final File offers_dir = new File(Environment
 			.getExternalStorageDirectory(), "EM/shopping/offers/");
+	public static final File profiles_dir = new File(Environment
+			.getExternalStorageDirectory(), "EM/shopping/profiles/");
 
 	protected HashMap<String, Integer> notificationCounter = new HashMap<String, Integer>();
-
 
 	protected ArrayList<User> getContacts() {
 		return ((PersonalEMApplication) getApplication()).contacts;
 
 	}
-	protected User getCurrentUser(){
+
+	protected User getCurrentUser() {
 		return ((PersonalEMApplication) getApplication()).currentUser;
 	}
-	
-	protected String getActivity(){
+
+	protected String getActivity() {
 		return ((PersonalEMApplication) getApplication()).activity;
 	}
 
@@ -71,15 +72,13 @@ public abstract class BaseActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
-		
-		
 
+		// set these directories if they are not yet configured
 		activity_dir.mkdirs();
 		configuration_dir.mkdirs();
 		offers_dir.mkdirs();
 		stream_dir.mkdirs();
-
-		
+		profiles_dir.mkdirs();
 
 		doOnCreate();
 	}
@@ -98,10 +97,8 @@ public abstract class BaseActivity extends Activity {
 
 			public void onClick(View v) {
 
+				Log.d(TAG, "clicked on homepageButton");
 				Intent home = new Intent(BaseActivity.this, HomeActivity.class);
-//				home.putParcelableArrayListExtra("contacts", getContacts());
-//				home.putExtra("currentuser", getCurrentUser());
-
 				startActivity(home);
 			}
 		});
@@ -113,8 +110,6 @@ public abstract class BaseActivity extends Activity {
 				Log.d(TAG, "clicked on friendspageButton");
 				Intent friends = new Intent(BaseActivity.this,
 						PersonalEMActivity.class);
-//				friends.putParcelableArrayListExtra("contacts", getContacts());
-//				friends.putExtra("currentuser", getCurrentUser());
 				startActivity(friends);
 			}
 		});
@@ -126,13 +121,14 @@ public abstract class BaseActivity extends Activity {
 				Log.d(TAG, "clicked on offerpageButton");
 				Intent offers = new Intent(BaseActivity.this,
 						OffersActivity.class);
-//				offers.putParcelableArrayListExtra("contacts", getContacts());
-//				offers.putExtra("currentuser", getCurrentUser());
 
 				startActivity(offers);
 			}
 		});
 
+		
+		// NewOffer starts an intent to activate the Camera
+		// with the button click we start creating the file for the picture that we are going to take
 		newofferButton.setOnClickListener(new OnClickListener() {
 
 			public void onClick(View view) {
@@ -145,7 +141,8 @@ public abstract class BaseActivity extends Activity {
 				Intent cameraIntent = new Intent(
 						android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
 
-				String filename = getCurrentUser().getFullName() + "_offer_" + now;
+				String filename = getCurrentUser().getFullName() + "_offer_"
+						+ now;
 
 				File dir = new File(Environment.getExternalStorageDirectory(),
 						"EM/shopping/myoffers");
@@ -272,11 +269,13 @@ public abstract class BaseActivity extends Activity {
 	}
 
 	protected void offerUploaded() {
-		// do nothing, subclass extend if needed
+		// do nothing, subclass extend if needed 
+		// it is called after returning from the camera intent and saving the file
+		// it is used in OffersActivity.java to update the gallery (and the list of offers)
 	}
+
 	
-	
-	protected void updateCurrentUser(int status){
-		
+	protected void updateCurrentUser(int status) {
+
 	}
 }
