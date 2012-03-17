@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 
 public class Offer {
 
@@ -55,7 +56,17 @@ public class Offer {
 	}
 
 	public String getPublished() {
-		return published;
+		Log.d("foo", "published: "+ this.published);
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-DD'T'HH:mm:ss'Z'");
+		Date date;
+		try {
+			date = formatter.parse(this.published);
+		} catch (ParseException e) {
+			e.printStackTrace();
+			return "";
+		}
+		SimpleDateFormat newFormat = new SimpleDateFormat("DD/MM-HH:mm");
+		return newFormat.format(date);
 	}
 
 	public void setPublished(String published) {
