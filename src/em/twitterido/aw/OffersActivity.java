@@ -118,7 +118,7 @@ public class OffersActivity extends BaseActivity {
 						+ shoppingoffers.get(position).getPublished();
 
 				message.setText(text);
-				message.setTextColor(R.color.mygreen);
+				//message.setTextColor(R.color.mygreen);
 
 			}
 

@@ -1,77 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/myviolet"
-    android:orientation="vertical" >
+    android:layout_height="match_parent" 
+    android:background="@color/mywhite"
+    android:weightSum="1" >
+    
+     	 <ImageButton
+   	     android:id="@+id/friendspageButton_o"
+   	     android:layout_width="100dp"
+   	     android:layout_height="100dp"
+   	     android:layout_alignParentRight="true"
+   	     android:layout_margin="2.5dip"
+   	     android:background="@color/trans"
+   	     android:scaleType="fitXY"
+   	     android:src="@drawable/group" />
 
-    <LinearLayout
-        android:id="@+id/linearLayout01"
-        android:layout_width="match_parent"
-        android:layout_height="370dp"
-        android:orientation="vertical" >
-
-        <LinearLayout
-            android:id="@+id/linearLayout1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" >
-
-            <ImageButton
-                android:id="@+id/homepageButton_o"
-                android:layout_width="75dp"
-                android:layout_height="75dp"
-                android:background="@color/trans"
-                android:scaleType="fitXY"
-                android:src="@drawable/hjem" />
-
-            <TextView
-                android:id="@+id/captionOffersText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="10dip"
-                android:layout_marginTop="5dip"
-                android:text="@string/labelmessage"
-                android:textSize="28dip" />
-
-        </LinearLayout>
-        <!-- <ImageView -->
-        <!-- android:id="@+id/imageSelected" -->
-        <!-- android:layout_width="match_parent" -->
-        <!-- android:layout_height="200dp" -->
-        <!-- android:layout_gravity="center" -->
-        <!-- android:layout_margin="10dip" -->
-        <!-- android:src="@drawable/plus" /> -->
-
-        <Gallery
-            android:id="@+id/galleryOffers"
-            android:layout_width="fill_parent"
-            android:layout_height="match_parent" android:layout_marginBottom="10dip" android:layout_marginTop="10dip"/>
-    </LinearLayout>
-
-    <!-- <LinearLayout -->
-    <!-- android:id="@+id/linearLayout3" -->
-    <!-- android:layout_width="match_parent" -->
-    <!-- android:layout_height="350dp"> -->
-    <!-- </LinearLayout> -->
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="110dp" >
-
-        <ImageButton
-            android:id="@+id/friendspageButton_o"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:layout_margin="2.5dp"
-            android:background="@color/trans"
-            android:scaleType="fitXY"
-            android:src="@drawable/group" />
 
         <ImageButton
             android:id="@+id/offerpageButton_o"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:layout_margin="2.5dp"
+            android:layout_alignParentBottom="true"
+            android:layout_margin="2.5dip"
             android:background="@color/trans"
             android:scaleType="fitXY"
             android:src="@drawable/tilbud" />
@@ -80,10 +30,42 @@
             android:id="@+id/newofferButton_o"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:layout_margin="2.5dp"
+            android:layout_alignLeft="@+id/friendspageButton_o"
+            android:layout_alignTop="@+id/offerpageButton_o"
+            android:layout_margin="2.5dip"
             android:background="@color/trans"
             android:scaleType="fitXY"
             android:src="@drawable/camera" />
-    </LinearLayout>
+        
 
-</LinearLayout>
+        <Gallery
+            android:id="@+id/galleryOffers"
+            android:layout_centerInParent="true"
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent" 
+            android:layout_marginBottom="90dip" 
+            android:layout_marginTop="90dip"/>
+        
+        <ImageButton
+            android:id="@+id/homepageButton_o"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_alignParentLeft="true"
+            android:layout_alignTop="@+id/friendspageButton_o"
+            android:background="@color/trans"
+            android:scaleType="fitXY"
+            android:src="@drawable/hjem" />
+
+        <TextView
+            android:id="@+id/captionOffersText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="90dip" 
+            android:layout_marginRight="90dip"
+            android:layout_above="@+id/offerpageButton_o"
+            android:layout_alignLeft="@+id/offerpageButton_o"
+            android:textColor="@color/mylightblue"
+            android:textStyle="bold"
+            android:textSize="28dip" />
+
+</RelativeLayout>

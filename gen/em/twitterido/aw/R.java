@@ -32,6 +32,7 @@ or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>na
         public static final int drag_active_color=0x7f050002;
         public static final int myblue=0x7f050003;
         public static final int mygreen=0x7f050004;
+        public static final int mylightblue=0x7f05000a;
         public static final int myorange=0x7f050005;
         public static final int myred=0x7f050006;
         public static final int myviolet=0x7f050007;
@@ -70,29 +71,28 @@ or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>na
         public static final int addUserButton=0x7f090002;
         public static final int addUserLabel=0x7f090000;
         public static final int addUserText=0x7f090001;
-        public static final int captionOffersText=0x7f090013;
+        public static final int captionOffersText=0x7f090016;
         public static final int captionText=0x7f09000f;
         public static final int friendsCounter=0x7f090006;
         public static final int friendsCounterText=0x7f090007;
         public static final int friendspageButton_f=0x7f09000b;
-        public static final int friendspageButton_o=0x7f090015;
+        public static final int friendspageButton_o=0x7f090011;
         public static final int gallery=0x7f09000e;
         public static final int galleryOffers=0x7f090014;
         public static final int homepageButton_f=0x7f090010;
-        public static final int homepageButton_o=0x7f090012;
+        public static final int homepageButton_o=0x7f090015;
         public static final int imageView1=0x7f090005;
-        public static final int imageView2=0x7f090019;
-        public static final int linearLayout01=0x7f090011;
+        public static final int imageView2=0x7f090018;
         public static final int linearLayout1=0x7f090009;
         public static final int linearLayoutHome=0x7f090004;
         public static final int newEventMessage=0x7f09000a;
         public static final int newofferButton_f=0x7f09000d;
-        public static final int newofferButton_o=0x7f090017;
+        public static final int newofferButton_o=0x7f090013;
         public static final int offerpageButton_f=0x7f09000c;
-        public static final int offerpageButton_o=0x7f090016;
-        public static final int relativeLayout1=0x7f090018;
-        public static final int userMenu=0x7f09001b;
-        public static final int webView1=0x7f09001a;
+        public static final int offerpageButton_o=0x7f090012;
+        public static final int relativeLayout1=0x7f090017;
+        public static final int userMenu=0x7f09001a;
+        public static final int webView1=0x7f090019;
     }
     public static final class layout {
         public static final int adduser=0x7f030000;
@@ -100,8 +100,7 @@ or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>na
         public static final int home=0x7f030002;
         public static final int main=0x7f030003;
         public static final int offers=0x7f030004;
-        public static final int offerstest=0x7f030005;
-        public static final int test=0x7f030006;
+        public static final int test=0x7f030005;
     }
     public static final class menu {
         public static final int menu=0x7f080000;
