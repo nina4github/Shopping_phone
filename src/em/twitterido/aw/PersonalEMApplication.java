@@ -86,6 +86,7 @@ public class PersonalEMApplication extends Application {
 
 			else if (content.contains("stop"))
 				status = 0;
+			
 
 			else if (content.contains("data")) {
 				status = 0; // assumed the message is fired when I have stopped.
@@ -109,6 +110,7 @@ public class PersonalEMApplication extends Application {
 
 			actor.setStatus(status); // this is updating our user status
 			// here handle the event in the specific activity
+			Log.d("TAG","gh event setting actor "+ actor.getFullName()+" status to "+ actor.getStatus());
 
 			GHEvent gh = new GHEvent();
 			gh.setActivity(extras.getString("activity"));

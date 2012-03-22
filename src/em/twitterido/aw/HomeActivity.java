@@ -51,9 +51,7 @@ public class HomeActivity extends BaseActivity {
 
 	@Override
 	protected void onResume() {
-
 		super.onResume();
-
 		Intent i = getIntent();
 		if (i.getExtras() != null && i.getExtras().containsKey("actor")) {
 			Bundle extras = i.getExtras();
@@ -77,7 +75,6 @@ public class HomeActivity extends BaseActivity {
 
 			public void onClick(View v) {
 				finish();
-
 			}
 		});
 
@@ -85,7 +82,6 @@ public class HomeActivity extends BaseActivity {
 
 			public void onStatusChanged(GHEvent e) {
 				Log.d(TAG, "onstatuschanged triggered");
-
 				fireMessage(e);
 			}
 

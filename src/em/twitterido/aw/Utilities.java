@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -63,6 +64,7 @@ public class Utilities {
 				fileData.append(buf, 0, numRead);
 			}
 			reader.close();
+			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -70,10 +72,11 @@ public class Utilities {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+ 
+		
 		return fileData;
 	}
-
+	
 	static void saveResponseToFile(String response, String filename, File dir) {
 		// TODO Auto-generated method stub
 
@@ -137,8 +140,8 @@ public class Utilities {
 
 			JSONArray jsonArray = jObj.getJSONArray("stream");
 
-			for (int i = 0; i < jsonArray.length(); i++) {
-
+			//for (int i = 0; i < jsonArray.length(); i++) {
+			for (int i = jsonArray.length()-1; i >= 0; i--) { // reverse order!!!
 				// get the object
 				JSONObject jsonObject = jsonArray.getJSONObject(i);
 				// take only if the verb is statusmessage (we want to check
@@ -314,7 +317,8 @@ public class Utilities {
 
 			JSONArray jsonArray = jObj.getJSONArray("stream");
 
-			for (int i = 0; i < jsonArray.length(); i++) {
+//			for (int i = 0; i < jsonArray.length(); i++) {
+			for (int i = jsonArray.length()-1; i >=0 ; i--) {
 
 				// get the object
 				JSONObject jsonObject = jsonArray.getJSONObject(i);

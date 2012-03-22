@@ -102,6 +102,8 @@ public class PersonalEMActivity extends BaseActivity {
 
 	protected StatusListener statusListener;
 
+	private String latestStream = null;
+
 	/** Called when the activity is first created. */
 	@Override
 	public void doOnCreate() {
@@ -110,15 +112,15 @@ public class PersonalEMActivity extends BaseActivity {
 		initializePrimaryServices();
 		Log.d(TAG, "Starting primary services");
 
-		
 	}
 
 	private void initializeGallery() {
 
-		StrictMode.setVmPolicy(new VmPolicy.Builder().detectAll().penaltyLog()
-				.build());
-		StrictMode.setThreadPolicy(new ThreadPolicy.Builder().permitAll()
-				.build());
+		// StrictMode.setVmPolicy(new
+		// VmPolicy.Builder().detectAll().penaltyLog()
+		// .build());
+		// StrictMode.setThreadPolicy(new ThreadPolicy.Builder().permitAll()
+		// .build());
 
 		String[] mImageUrls = getProfilesImageUrls();
 
@@ -325,9 +327,10 @@ public class PersonalEMActivity extends BaseActivity {
 	}
 
 	private void onFriends() {
-		
+
+		// TODO move this call to set friends
 		initializeUsersStatus();
-		
+
 		Log.d(TAG, "contacts number " + getContacts().size());
 		notificationCounter = Utilities
 				.updateNotificationCounter(getContacts());
@@ -340,61 +343,48 @@ public class PersonalEMActivity extends BaseActivity {
 	}
 
 	private void initializeUsersStatus() {
-		if (isFriendsStatusUpdated()) {
-
-			ArrayList<User> entities = new ArrayList<User>();
-			entities.addAll(getContacts());
-			entities.add(getCurrentUser());
-			Utilities.updateActiveEntities(stream_dir, "stream.txt", entities);
-
-		} else {
-			updateFriendsStatus();
-		}
-
-	}
-
-	private void updateFriendsStatus() {
-		String response = getTodayStreamFromDiaspora();
-		Utilities.saveResponseToFile(response, "stream.txt", stream_dir);
 
 		ArrayList<User> entities = new ArrayList<User>();
-		entities.add(getCurrentUser());
 		entities.addAll(getContacts());
-		Utilities.updateActiveEntities(stream_dir, "stream.txt", entities);
-		// // Utilities.updateActiveThings(stream_dir, "stream.txt",
-		// getContacts()); // this will update contacts :)
+		entities.add(getCurrentUser());
 
-		// Utilities.updateActiveUsers(stream_dir, "stream.txt", entities);
-		// Utilities.updateActivePlaces(stream_dir, "stream.txt",
-		// getContacts());
+		if (!isFriendsStatusUpdated()) {
+
+			if (latestStream != null) {
+				Utilities.saveResponseToFile(latestStream, "stream.txt",
+						stream_dir);
+			} 
+		}
+		Utilities.updateActiveEntities(stream_dir, "stream.txt", entities);
 
 	}
 
+	private void retrieveStream() {
+		String response = getTodayStreamFromDiaspora();
+		Utilities.saveResponseToFile(response, "stream.txt", stream_dir);
+	}
+
+	// check if there are new messages available that would update Friends
+	// Status.
+	// if we did not had any messages before => return false
+	// if updates are available => return false
+	// if no updates available => Friends status is updated => return true
 	private boolean isFriendsStatusUpdated() {
 
 		Log.d(TAG, "check if stream.txt exists and is updated");
 
-		if (!(new File(stream_dir, "stream.txt").exists())) {
-			Log.d(TAG, "stream.txt does not exist, therefore is not updated");
-			return false; // exit
-		}
 
-		String laststream = getTodayStreamFromDiaspora();
+		latestStream = getTodayStreamFromDiaspora();
 
 		StringBuffer fileData = Utilities.readStringFromFile(stream_dir,
 				"stream.txt");
 
-		if (!fileData.toString().equalsIgnoreCase(laststream)) {
-
-			Log.d(TAG, "new updates are available");
+		if (!fileData.toString().equalsIgnoreCase(latestStream)) {
+			Log.d(TAG, "new updates are available, saving them");
 			return false;
 		}
 		Log.d(TAG, "the situation is already updated");
 		return true;
-	}
-
-	private void onFriendsStatus() {
-
 	}
 
 	private void getUserFromDiaspora(String username) {
@@ -492,51 +482,50 @@ public class PersonalEMActivity extends BaseActivity {
 
 	}
 
+	// takes from diaspora the list of contacts, saves it in contacts.txt,
+	// initialize the ArrayList of Users that are contacts calling
+	// setNewContact()
 	private void setFriends() {
-		// TODO Auto-generated method stub
+
+		String response = getFriendsFromDiaspora();
+		Utilities.saveResponseToFile(response, "contacts.txt",
+				configuration_dir);
+
+		StringBuffer contactsString = Utilities.readStringFromFile(
+				configuration_dir, "contacts.txt");
+
+		// File file = new File(configuration_dir, "contacts.txt");
+		// StringBuffer fileData = new StringBuffer(1000);
+		// BufferedReader reader = new BufferedReader(new FileReader(file));
+		// char[] buf = new char[1024];
+		// int numRead = 0;
+		// while ((numRead = reader.read(buf)) != -1) {
+		// fileData.append(buf, 0, numRead);
+		// }
+		// reader.close();
+		JSONObject jObj = null;
 		try {
-			// setFriendsFromFile();
-
-			String response = getFriendsFromDiaspora();
-			Utilities.saveResponseToFile(response, "contacts.txt",
-					configuration_dir);
-
-			File file = new File(configuration_dir, "contacts.txt");
-			StringBuffer fileData = new StringBuffer(1000);
-			BufferedReader reader = new BufferedReader(new FileReader(file));
-			char[] buf = new char[1024];
-			int numRead = 0;
-			while ((numRead = reader.read(buf)) != -1) {
-				fileData.append(buf, 0, numRead);
-			}
-			reader.close();
-			JSONObject jObj = null;
-			try {
-				jObj = new JSONObject(fileData.toString());
-			} catch (JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			/**
-			 * Convert JSONArray to our user type.
-			 */
-			try {
-				((PersonalEMApplication) getApplication()).contacts = new ArrayList<User>();
-				JSONObject con = jObj.getJSONObject("contacts");
-				JSONArray jsonArray = con.getJSONArray("actor");
-				for (int i = 0; i < jsonArray.length(); i++) {
-					JSONObject jsonObject = jsonArray.getJSONObject(i);
-					JSONArray tags = jsonObject.getJSONArray("tags");
-					// Log.i("Contact", "JSon is: " + jsonObject + "\n");
-					getContacts().add(setNewContact(jsonObject));
-				}
-				onFriends();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-		} catch (IOException e) {
+			jObj = new JSONObject(contactsString.toString());
+		} catch (JSONException e) {
 			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		/**
+		 * Convert JSONArray to our user type.
+		 */
+		try {
+			((PersonalEMApplication) getApplication()).contacts = new ArrayList<User>();
+			JSONObject con = jObj.getJSONObject("contacts");
+			JSONArray jsonArray = con.getJSONArray("actor");
+			for (int i = 0; i < jsonArray.length(); i++) {
+				JSONObject jsonObject = jsonArray.getJSONObject(i);
+				//JSONArray tags = jsonObject.getJSONArray("tags");
+				// Log.i("Contact", "JSon is: " + jsonObject + "\n");
+				getContacts().add(setNewContact(jsonObject));
+			}
+			retrieveStream();
+			onFriends();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -554,7 +543,7 @@ public class PersonalEMActivity extends BaseActivity {
 	}
 
 	private User setNewContact(JSONObject jsonObject) throws JSONException {
-		// TODO Auto-generated method stub
+		// TODO this function can be brought to Utilities.setNewContact
 
 		User newContact = new User();
 		int id = jsonObject.getInt("id");
@@ -624,13 +613,15 @@ public class PersonalEMActivity extends BaseActivity {
 
 		Log.i(TAG, "received a new intent, do something " + intent.getAction());
 		if (intent.getAction() != null) {
-			if (intent.getAction().equals("android.nfc.action.NDEF_DISCOVERED")) {
-				Log.d(TAG, "TAG_DISCOVERED Receiver catched it");
-
-				String s = NFCIntentParser.parse(intent);
-				Log.d(TAG, "NFC string parsed ONNEWINTENT " + s);
-
-			}
+			// if
+			// (intent.getAction().equals("android.nfc.action.NDEF_DISCOVERED"))
+			// {
+			// Log.d(TAG, "TAG_DISCOVERED Receiver catched it");
+			//
+			// String s = NFCIntentParser.parse(intent);
+			// Log.d(TAG, "NFC string parsed ONNEWINTENT " + s);
+			//
+			// }
 
 			if (intent.getAction().equals(
 					"android.hardware.usb.action.USB_ACCESSORY_ATTACHED")) {
@@ -656,7 +647,7 @@ public class PersonalEMActivity extends BaseActivity {
 		setContentView(R.layout.main);
 		initializeButtons(R.id.homepageButton_f, R.id.friendspageButton_f,
 				R.id.offerpageButton_f, R.id.newofferButton_f);
-
+		// TODO maybe add initiateGallery
 	}
 
 	/*
@@ -670,7 +661,7 @@ public class PersonalEMActivity extends BaseActivity {
 		super.onSaveInstanceState(outState);
 		initializeButtons(R.id.homepageButton_f, R.id.friendspageButton_f,
 				R.id.offerpageButton_f, R.id.newofferButton_f);
-
+		// TODO maybe add initiateGallery
 	}
 
 	@Override
@@ -681,6 +672,7 @@ public class PersonalEMActivity extends BaseActivity {
 		return true;
 	}
 
+	// menu option to change the user of the app
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// TODO Auto-generated method stub
@@ -697,6 +689,8 @@ public class PersonalEMActivity extends BaseActivity {
 		}
 	}
 
+	// this method is used as result from the setuser activity (username
+	// configuration)
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		// TODO Auto-generated method stub
@@ -708,7 +702,9 @@ public class PersonalEMActivity extends BaseActivity {
 			}
 			Log.d(TAG, "we have extras from SetUser");
 			String user = extras.getString("name");
+			// TODO empty the folders contacts, profiles, ...
 			getUserFromDiaspora(user);
+
 		}
 	}
 
@@ -717,14 +713,13 @@ public class PersonalEMActivity extends BaseActivity {
 		Log.d(TAG, "onResume is executed");
 		super.onResume();
 
-		
 		initializeButtons(R.id.homepageButton_f, R.id.friendspageButton_f,
 				R.id.offerpageButton_f, R.id.newofferButton_f);
 
 		initializeData();
 		Log.d(TAG, "Data has been initialized");
-		
-		activityNotification = (TextView) findViewById(R.id.activityNew);
+
+		// activityNotification = (TextView) findViewById(R.id.activityNew);
 
 		initializeListeners();
 
@@ -736,15 +731,17 @@ public class PersonalEMActivity extends BaseActivity {
 
 		if (intent.getAction() == null) {
 		} else {
-			// Parse NFC
-			if (intent.getAction().equals("android.nfc.action.NDEF_DISCOVERED")) {
-				Log.d(TAG, "NFC_DISCOVERED Receiver catched it oncreate");
-
-				String s = NFCIntentParser.parse(intent);
-				Log.d(TAG, "NFC string parsed" + s);
-				activityNotification.setText("NFC string: " + s);
-
-			}
+			// // Parse NFC - not used
+			// if
+			// (intent.getAction().equals("android.nfc.action.NDEF_DISCOVERED"))
+			// {
+			// Log.d(TAG, "NFC_DISCOVERED Receiver catched it oncreate");
+			//
+			// String s = NFCIntentParser.parse(intent);
+			// Log.d(TAG, "NFC string parsed" + s);
+			// activityNotification.setText("NFC string: " + s);
+			//
+			// }
 
 			/**
 			 * start the Accessory Service we need to send all the intent that
@@ -767,16 +764,16 @@ public class PersonalEMActivity extends BaseActivity {
 		}
 	}
 
+	// listener for the geniehub/eventbus events
 	private void initializeListeners() {
 
 		statusListener = new StatusListener() {
 
 			public void onStatusChanged(GHEvent e) {
 				Log.d(TAG, "onstatuschanged triggered");
-
 				// here I already have updated the user corresponding to actor
 
-				onProfileImages(); // update the gallery with the icons
+				// onProfileImages(); // update the gallery with the icons
 				// representing the status of each contact
 
 				Intent home = new Intent(PersonalEMActivity.this,
@@ -788,12 +785,6 @@ public class PersonalEMActivity extends BaseActivity {
 				home.putExtra("content", e.content);
 				home.putExtra("activity", e.activity);
 				startActivity(home);
-
-				// CREATE DIALOG DISPLAYING NEW EVENT
-				// String message = activeThings + " "+
-				// getString(R.string.activeFriendsText);
-				// Utilities.createAlertDialogue(PersonalEMActivity.this,
-				// message);
 
 			}
 
@@ -1061,8 +1052,7 @@ public class PersonalEMActivity extends BaseActivity {
 
 	@Override
 	protected void offerUploaded() {
-		getCurrentUser().setStatus(getCurrentUser().getStatus()+1);
-		
+		getCurrentUser().setStatus(getCurrentUser().getStatus() + 1);
 		Log.d(TAG, "offerUploaded");
 		onResume();
 	}
