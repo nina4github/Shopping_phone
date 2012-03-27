@@ -114,7 +114,7 @@ public class OffersActivity extends BaseActivity {
 				TextView message = (TextView) findViewById(R.id.captionOffersText);
 				User user = shoppingoffers.get(position).getSharedByUser();
 				String username = user.getFullName();
-				String text = "shared by: " + username + " on "
+				String text = "Fra " + username + "d. "
 						+ shoppingoffers.get(position).getPublished();
 
 				message.setText(text);
@@ -131,12 +131,11 @@ public class OffersActivity extends BaseActivity {
 		offers_gallery
 				.setOnItemLongClickListener(new OnItemLongClickListener() {
 
-					public boolean onItemLongClick(AdapterView<?> arg0,
-							View arg1, int arg2, long arg3) {
-
-						// TODO
-						// load full image and enable gestures to expand
-
+					public boolean onItemLongClick(AdapterView<?> parent,
+							View view, int position, long id) {
+						Drawable drawable = (Drawable) parent.getAdapter().getItem(position);
+					
+						startFullscreenImageView(drawable);
 						return false;
 					}
 
@@ -144,6 +143,11 @@ public class OffersActivity extends BaseActivity {
 
 	}
 
+	private void startFullscreenImageView(Drawable drawable){
+		Intent intent = new Intent(this, FullscreenImage.class);
+		
+		startActivity(intent);
+	}
 	private boolean isUpdated() {
 
 		Log.d(TAG, "check if offers.txt exists and is updated");
@@ -361,9 +365,12 @@ public class OffersActivity extends BaseActivity {
 		public int getCount() {
 			return mImageDrawables.length;// Integer.MAX_VALUE;
 		}
+		
+		
 
 		public Object getItem(int position) {
-			return position;// getPosition(position);
+		//	return position;// getPosition(position);
+			return this.mImageDrawables[position];
 		}
 
 		public long getItemId(int position) {

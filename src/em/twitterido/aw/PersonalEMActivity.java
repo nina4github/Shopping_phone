@@ -416,7 +416,6 @@ public class PersonalEMActivity extends BaseActivity {
 			}
 			jObj = new JSONObject(response);
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		JSONObject actor = null;
@@ -425,7 +424,6 @@ public class PersonalEMActivity extends BaseActivity {
 			((PersonalEMApplication) getApplication()).currentUser = setNewContact(actor);
 			onCurrentUser();
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -877,6 +875,7 @@ public class PersonalEMActivity extends BaseActivity {
 				if (actor.getStatus() >= 1) {
 					if (actor.getEntityType().equals("thing"))
 						statusIcon.setImageResource(R.drawable.greenbag);
+					// statusIcon.setClickable(false) possible solution / check also focusable.
 					if (actor.getEntityType().equals("person"))
 						statusIcon.setImageResource(R.drawable.star);
 					if (actor.getEntityType().equals("place"))

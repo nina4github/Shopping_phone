@@ -11,9 +11,9 @@ public class OfferComparator implements Comparator<Offer> {
 	public int compare(Offer lhs, Offer rhs) {
 		try {
 
-			Date datelhs = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",
+			Date datelhs = new SimpleDateFormat("DD/MM-HH:mm",//"yyyy-MM-dd'T'HH:mm:ss",
 					Locale.ENGLISH).parse(lhs.getPublished());
-			Date daterhs = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",
+			Date daterhs = new SimpleDateFormat("DD/MM-HH:mm",//"yyyy-MM-dd'T'HH:mm:ss",
 					Locale.ENGLISH).parse(rhs.getPublished());
 			return daterhs.compareTo(datelhs); // more recent date first
 		} catch (ParseException e) {
