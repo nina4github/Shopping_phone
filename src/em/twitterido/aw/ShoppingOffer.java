@@ -18,5 +18,4 @@ public class ShoppingOffer extends Movable{
         super(bitmap);
     }
     
-    
 }

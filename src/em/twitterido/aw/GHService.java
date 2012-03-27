@@ -1,5 +1,6 @@
 package em.twitterido.aw;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -55,6 +56,7 @@ public class GHService extends Service {
 	// to handle power management to wakeup the device
 	// in case of detection of a new event
 	PowerManager.WakeLock wl;
+	private Listener l;
 
 	@Override
 	public IBinder onBind(Intent arg0) {
@@ -142,7 +144,7 @@ public class GHService extends Service {
 
 		// create a listener only for the contacts of the user and for the
 		// specific activity in Focus
-		Listener l = new Listener(new PatternBuilder().add(field1,
+		l = new Listener(new PatternBuilder().add(field1,
 				PatternOperator.EQ, currentActivity).add(field2,
 				PatternOperator.EQ, contact_ids).getPattern()) {
 
@@ -195,6 +197,12 @@ public class GHService extends Service {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+		try {
+			l.stop();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 
