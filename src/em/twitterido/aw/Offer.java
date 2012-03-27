@@ -56,7 +56,7 @@ public class Offer {
 	}
 
 	public String getPublished() {
-		Log.d("foo", "published: "+ this.published);
+		//Log.d("foo", "published: "+ this.published);
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-DD'T'HH:mm:ss'Z'");
 		Date date;
 		try {

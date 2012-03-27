@@ -87,6 +87,7 @@
         <activity android:name=".HomeActivity" android:label="@string/homeTitle" android:theme="@android:style/Theme.Dialog" android:launchMode="singleTask"></activity>
        
         <service android:name=".ADKListenerService"></service>
+        <activity android:name="FullscreenImage"></activity>
     </application>
 
 </manifest>
